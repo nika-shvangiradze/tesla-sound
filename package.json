@@ -11,18 +11,15 @@
     "build": "next build",
     "typecheck": "next typegen && tsc --noEmit",
     "preview": "serve out -l 3000",
-    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/gps.test.mts tests/report-transfer.test.mts"
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/gps.test.mts tests/photo-report.test.mts"
   },
   "dependencies": {
-    "fflate": "^0.8.3",
     "next": "16.4.6",
-    "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.21",

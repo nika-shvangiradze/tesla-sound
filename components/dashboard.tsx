@@ -4,8 +4,8 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ApiState, Vector } from '../lib/diagnostic';
 import { useDiagnostic } from '../lib/use-diagnostic';
-import { downloadReport } from '../lib/report-transfer';
-import ReportTransfer from './report-transfer';
+import { downloadReport } from '../lib/photo-report';
+import PhotoReport from './photo-report';
 import SpeedChart from './speed-chart';
 
 const units = { speed: 'km/h', time: 'ms', distance: 'm' };
@@ -86,10 +86,10 @@ export default function Dashboard() {
             <button className="button" disabled={!active} onClick={stop}>
               <span className="stop-icon" aria-hidden="true" />Stop Test
             </button>
+            <PhotoReport hasRun={view.hasRun} getExport={getExport} />
             <button className="button" disabled={!view.hasRun} onClick={download}>
               <span className="export-icon" aria-hidden="true">↓</span>Export JSON
             </button>
-            <ReportTransfer hasRun={view.hasRun} getExport={getExport} />
           </div>
         </div>
 
