@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ApiState, Vector } from '../lib/diagnostic';
 import { useDiagnostic } from '../lib/use-diagnostic';
+import { downloadReport } from '../lib/report-transfer';
+import ReportTransfer from './report-transfer';
 import SpeedChart from './speed-chart';
 
 const units = { speed: 'km/h', time: 'ms', distance: 'm' };
@@ -43,26 +45,15 @@ export default function Dashboard() {
   const { view, start, stop, getExport } = useDiagnostic();
   const { active, latest, history, capabilities, events } = view;
   const [json, setJson] = useState<string | null>(null);
-  const exportUrl = useRef<string | null>(null);
-  useEffect(() => () => {
-    if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
-  }, []);
 
   function download() {
     const output = getExport();
     if (!output) return;
     setJson(output);
-    if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
     try {
-      exportUrl.current = URL.createObjectURL(new Blob([output], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = exportUrl.current;
-      link.download = `voltsound-diagnostic-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      downloadReport(output);
     } catch {
-      exportUrl.current = null;
+      // The inline JSON remains available when downloads are blocked.
     }
   }
 
@@ -98,6 +89,7 @@ export default function Dashboard() {
             <button className="button" disabled={!view.hasRun} onClick={download}>
               <span className="export-icon" aria-hidden="true">↓</span>Export JSON
             </button>
+            <ReportTransfer hasRun={view.hasRun} getExport={getExport} />
           </div>
         </div>
 
@@ -192,7 +184,7 @@ export default function Dashboard() {
         )}
       </main>
       <footer>
-        <span>Data stays in this browser until exported.</span>
+        <span>Reports are processed in your browser.</span>
         <span>While moving, only a passenger should operate the screen.</span>
       </footer>
     </div>

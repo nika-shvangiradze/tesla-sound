@@ -141,6 +141,14 @@ h3 { font-size: .95rem; font-weight: 650; }
 .export-panel summary { cursor: pointer; font-weight: 650; }
 .export-panel p { margin-top: 8px; color: var(--muted); }
 textarea { width: 100%; display: block; margin-top: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--background); font: 13px var(--mono); }
+.report-dialog { width: min(640px, calc(100% - 28px)); max-height: calc(100vh - 28px); margin: auto; padding: 0; color: var(--text); overflow: auto; }
+.report-dialog::backdrop { background: #050b10d9; }
+.report-dialog-body { display: grid; gap: 12px; padding: 16px 19px; }
+.report-dialog p { color: var(--muted); }
+.report-dialog summary { cursor: pointer; }
+.report-dialog .panel-heading .button { min-height: 40px; }
+.report-qr { width: min(100%, 510px, calc(100vh - 260px)); height: auto; margin: 0 auto; border-radius: 5px; image-rendering: pixelated; }
+.report-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; }
 footer { padding: 17px 0 20px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
 
 @media (max-width: 820px) {
