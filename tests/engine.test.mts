@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { driveTarget, IDLE_RPM, REDLINE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from '../lib/drive-model.ts';
-import { makeEngineWave } from '../lib/engine-wave.ts';
+import { makeEngineWave, VOICE_IDS } from '../lib/engine-wave.ts';
 
 test('GPS drive starts in a suitable gear and locks shifts until the shift interval elapses', () => {
   const cruising = trackSpeed(85, 1000, null);
@@ -35,13 +35,27 @@ test('at zero speed the virtual gearbox returns to first and idles', () => {
   assert.equal(target.fresh, true);
 });
 
-test('the V8 wavetable yields distinct, bounded stereo pulses and a smooth loop seam', () => {
-  const [left, right] = makeEngineWave(3600);
-  assert.equal(left.length, 3600);
-  assert.notDeepEqual(left, right);
-  for (const wave of [left, right]) {
-    assert.ok(wave.some((sample) => Math.abs(sample) > 0.5));
-    assert.ok(wave.every((sample) => Number.isFinite(sample) && Math.abs(sample) < 1));
-    assert.ok(Math.abs(wave[0] - wave[wave.length - 1]) < 0.05);
+test('each V8 voice keeps distinct stereo banks, bounded samples, and a smooth loop seam', () => {
+  for (const id of VOICE_IDS) {
+    const [left, right] = makeEngineWave(3600, id);
+    assert.equal(left.length, 3600);
+    assert.notDeepEqual(left, right);
+    for (const wave of [left, right]) {
+      assert.ok(wave.some((sample) => Math.abs(sample) > 0.5));
+      assert.ok(wave.every((sample) => Number.isFinite(sample) && Math.abs(sample) < 1));
+      assert.ok(Math.abs(wave[0] - wave[wave.length - 1]) < 0.05);
+    }
   }
+});
+
+test('C63 emphasizes higher engine orders than Shelby at the same RPM', () => {
+  const [shelby] = makeEngineWave(3600, 'shelby');
+  const [c63] = makeEngineWave(3600, 'c63');
+  function relativeDifferenceEnergy(wave: Float32Array) {
+    const total = wave.reduce((energy, sample) => energy + sample ** 2, 0);
+    const highOrders = wave.reduce((energy, sample, index) =>
+      energy + (sample - wave[(index + 1) % wave.length]) ** 2, 0);
+    return highOrders / total;
+  }
+  assert.ok(relativeDifferenceEnergy(c63) > 2 * relativeDifferenceEnergy(shelby));
 });

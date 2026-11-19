@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { clamp, driveTarget, IDLE_RPM, REDLINE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from './drive-model';
 import type { SpeedTracking, Transmission } from './drive-model';
 import { EngineAudio, type AudioPath } from './engine-audio';
+import { DEFAULT_VOICE, type VoiceId } from './engine-wave';
 import { makeFix, OPTIONS } from './gps';
 
 export type EngineMode = 'manual' | 'gps';
@@ -20,11 +21,12 @@ export function useEngine() {
   const [manualRpm, renderManualRpm] = useState(IDLE_RPM);
   const [volume, renderVolume] = useState(36);
   const [preferWorklet, setPreferWorklet] = useState(false);
+  const [voice, renderVoice] = useState<VoiceId>(DEFAULT_VOICE);
   const [state, setState] = useState<AudioStatus>('off');
   const [path, setPath] = useState<AudioPath>('standard');
   const [error, setError] = useState('');
   const [frame, setFrame] = useState(emptyFrame);
-  const controls = useRef({ mode, manualRpm, volume, revUntil: 0 });
+  const controls = useRef({ mode, manualRpm, volume, voice, revUntil: 0 });
   const gps = useRef<Gps>(newGps());
   const session = useRef<Session | null>(null);
   const active = state === 'playing' || state === 'paused';
@@ -130,7 +132,7 @@ export function useEngine() {
       const gpsStatus = !inDrive ? 'GPS standby'
         : drive?.fresh ? 'Receiving GPS speed'
         : reading.issue ?? (reading.tracking ? 'GPS delayed · idling' : 'Waiting for GPS speed');
-      current.audio.update(rpm, load, input.volume / 100);
+      current.audio.update(rpm, load, input.volume / 100, input.voice);
       if (now - lastDisplay >= 65) {
         lastDisplay = now;
         setFrame({
@@ -150,7 +152,7 @@ export function useEngine() {
     setState('starting');
     try {
       if (!current) {
-        current = { audio: new EngineAudio(), resuming: false, preferWorklet };
+        current = { audio: new EngineAudio(controls.current.voice), resuming: false, preferWorklet };
         session.current = current;
         setPath('standard');
       }
@@ -190,7 +192,11 @@ export function useEngine() {
   }
 
   return {
-    mode, manualRpm, volume, preferWorklet, state, path, error, frame, start, stop, setMode, setPreferWorklet,
+    mode, manualRpm, volume, voice, preferWorklet, state, path, error, frame, start, stop, setMode, setPreferWorklet,
+    setVoice(id: VoiceId) {
+      controls.current.voice = id;
+      renderVoice(id);
+    },
     setManualRpm(value: number) {
       controls.current.manualRpm = value;
       renderManualRpm(value);

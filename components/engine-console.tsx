@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { IDLE_RPM, REDLINE_RPM } from '../lib/drive-model';
+import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
 import { useEngine } from '../lib/use-engine';
 
 const gearNumbers = [1, 2, 3, 4, 5, 6];
@@ -27,7 +28,7 @@ export default function EngineConsole() {
         <div className="engine-intro">
           <div>
             <h1>V8 GPS Edition<span>.</span></h1>
-            <p>Synthesized cross-plane V8 · six-speed virtual gearbox</p>
+            <p>Synthesized V8 · six-speed virtual gearbox</p>
           </div>
           <div className="engine-actions">
             <button className="button primary" onClick={() => void engine.start()} disabled={running || state === 'starting'}>
@@ -74,8 +75,19 @@ export default function EngineConsole() {
           </section>
 
           <section className="panel engine-settings" aria-labelledby="engine-controls">
-            <div className="panel-heading"><h2 id="engine-controls">Sound controls</h2><span className="badge">V8</span></div>
+            <div className="panel-heading"><h2 id="engine-controls">Sound controls</h2></div>
             <div className="engine-settings-body">
+              <div className="voice-picker">
+                <div className="dial-label" id="engine-voice">Engine sound</div>
+                <div className="mode-picker" aria-labelledby="engine-voice" role="group">
+                  {VOICE_IDS.map((id) => (
+                    <button key={id} className="button" aria-pressed={engine.voice === id} onClick={() => engine.setVoice(id)}>
+                      {ENGINE_VOICES[id].label}
+                    </button>
+                  ))}
+                </div>
+                <p>{ENGINE_VOICES[engine.voice].description}</p>
+              </div>
               <div className="mode-picker" aria-label="Engine mode" role="group">
                 <button className="button" aria-pressed={mode === 'manual'} onClick={() => engine.setMode('manual')}>Manual Mode</button>
                 <button className="button" aria-pressed={mode === 'gps'} onClick={() => engine.setMode('gps')}>GPS Drive</button>

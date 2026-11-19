@@ -68,8 +68,11 @@
 .gear-strip .current-gear { color: #0b2421; border-color: var(--accent); background: var(--accent); }
 .engine-settings-body { padding: 16px 19px; }
 .mode-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.voice-picker { display: grid; gap: 7px; margin-bottom: 13px; }
+.voice-picker .button { min-height: 44px; padding-inline: 8px; }
+.voice-picker p { color: var(--muted); font-size: .85rem; }
 .mode-picker .button[aria-pressed="true"] { color: #a4fbec; border-color: #4da598; background: #173632; }
-.mode-controls { margin: 17px 0; min-height: 118px; }
+.mode-controls { margin: 12px 0; min-height: 104px; }
 .drive-explanation { display: grid; align-items: center; color: var(--muted); line-height: 1.45; }
 .dial-label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; }
 .dial-label b { font-family: var(--mono); color: var(--accent); }
@@ -82,6 +85,14 @@
 .audio-path { font: 13px var(--mono); color: var(--accent); padding-top: 4px; }
 .engine-error { color: #ffd0ab; margin-top: 6px; font-size: .875rem; }
 
+@media (min-width: 736px) and (max-height: 760px) {
+  .engine-intro { margin-block: 19px 15px; }
+  .engine-intro h1 { font-size: clamp(2.35rem, 5.2vw, 4.25rem); }
+  .engine-settings-body { padding-block: 11px; }
+  .voice-picker { gap: 4px; margin-bottom: 8px; }
+  .mode-controls { margin-block: 9px; min-height: 0; }
+  .volume-controls { padding-top: 8px; }
+}
 @media (max-width: 735px) {
   .engine-grid { grid-template-columns: minmax(0, 1fr); }
   .engine-intro { align-items: flex-start; gap: 14px; }
