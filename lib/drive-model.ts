@@ -39,7 +39,12 @@ function wheelRpm(speedKmh: number, gear: number) {
 export type Transmission = { gear: number; shiftedAtMs: number };
 export type DriveTarget = Transmission & { rpm: number; load: number; fresh: boolean };
 
-export function driveTarget(tracking: SpeedTracking | null, previous: Transmission | null, now: number): DriveTarget {
+export function driveTarget(
+  tracking: SpeedTracking | null,
+  previous: Transmission | null,
+  now: number,
+  redlineRpm = REDLINE_RPM,
+): DriveTarget {
   const age = tracking ? Math.max(0, now - tracking.atMs) : Infinity;
   if (!tracking || age >= SPEED_TIMEOUT_MS) {
     return { gear: 1, shiftedAtMs: -Infinity, rpm: IDLE_RPM, load: 0.08, fresh: false };
@@ -51,8 +56,9 @@ export function driveTarget(tracking: SpeedTracking | null, previous: Transmissi
   const correctionKmh = clamp(acceleration * leadSeconds * 3.6, -6, 6);
   const speed = tracking.measuredKmh < LOW_SPEED_KMH ? 0 : Math.max(0, tracking.filteredKmh + correctionKmh);
   const load = speed === 0 ? 0.08 : clamp(0.16 + acceleration * freshness / 4.8 + speed / 560, 0.08, 1);
-  const upAt = 3_850 + load * 2_450;
-  const downAt = 1_600 + load * 650;
+  const shiftScale = redlineRpm / REDLINE_RPM;
+  const upAt = (3_850 + load * 2_450) * shiftScale;
+  const downAt = (1_600 + load * 650) * shiftScale;
   let gear = previous?.gear ?? 1;
   let shiftedAtMs = previous?.shiftedAtMs ?? -Infinity;
 
@@ -75,7 +81,7 @@ export function driveTarget(tracking: SpeedTracking | null, previous: Transmissi
   return {
     gear,
     shiftedAtMs,
-    rpm: clamp(wheelRpm(speed, gear), IDLE_RPM, REDLINE_RPM),
+    rpm: clamp(wheelRpm(speed, gear), IDLE_RPM, redlineRpm),
     load: load * shiftLoad,
     fresh: true,
   };

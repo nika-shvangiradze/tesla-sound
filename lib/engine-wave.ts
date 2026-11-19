@@ -14,9 +14,13 @@ type EngineVoice = {
   idleCutoffHz: number;
   loadCutoffHz: number;
   level: number;
+  redlineRpm: number;
+  whine: number;
 };
 
 const CROSS_PLANE_BANKS = [0, 1, 0, 0, 1, 0, 1, 1];
+const FLAT_PLANE_BANKS = [0, 1, 0, 1, 0, 1, 0, 1];
+const FLAT_SIX_BANKS = [0, 1, 0, 1, 0, 1];
 
 export const ENGINE_VOICES = {
   shelby: {
@@ -33,6 +37,8 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 380,
     loadCutoffHz: 2_150,
     level: 0.94,
+    redlineRpm: 6_800,
+    whine: 0,
   },
   c63: {
     label: 'C63 AMG W204',
@@ -48,11 +54,64 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 620,
     loadCutoffHz: 3_450,
     level: 1.13,
+    redlineRpm: 6_800,
+    whine: 0,
+  },
+  ferrari: {
+    label: 'Ferrari 458 Italia',
+    description: 'High-revving flat-plane V8',
+    banks: FLAT_PLANE_BANKS,
+    pulseStrength: [1.02, 0.99, 0.97, 1.01, 1, 0.96, 1.03, 1],
+    timing: [0, 0, 0, 0, 0, 0, 0, 0],
+    attack: 570,
+    resonances: [[8, 29, 0.49], [24, 54, 0.38], [40, 84, 0.23], [64, 128, 0.12]],
+    bankDelay: 0.012,
+    crossover: 0.47,
+    rumble: 0.035,
+    idleCutoffHz: 760,
+    loadCutoffHz: 4_630,
+    level: 0.98,
+    redlineRpm: 9_000,
+    whine: 0,
+  },
+  porsche: {
+    label: 'Porsche 911 GT3',
+    description: 'Metallic flat-six exhaust note',
+    banks: FLAT_SIX_BANKS,
+    pulseStrength: [1, 0.96, 1.04, 0.95, 1.02, 0.98],
+    timing: [0, 0.001, 0, 0.001, 0, 0],
+    attack: 620,
+    resonances: [[6, 35, 0.61], [18, 57, 0.40], [36, 87, 0.24], [54, 118, 0.10]],
+    bankDelay: 0.027,
+    crossover: 0.34,
+    rumble: 0.045,
+    idleCutoffHz: 710,
+    loadCutoffHz: 4_180,
+    level: 1.06,
+    redlineRpm: 9_000,
+    whine: 0,
+  },
+  hellcat: {
+    label: 'Dodge Challenger Hellcat',
+    description: 'HEMI V8 rumble with supercharger whine under load',
+    banks: CROSS_PLANE_BANKS,
+    pulseStrength: [1.06, 0.9, 1.07, 0.94, 1.04, 0.91, 1.08, 0.92],
+    timing: [0, 0.002, -0.001, 0.002, 0, 0.001, -0.001, 0.002],
+    attack: 390,
+    resonances: [[8, 36, 0.72], [20, 65, 0.30], [42, 103, 0.14]],
+    bankDelay: 0.033,
+    crossover: 0.36,
+    rumble: 0.18,
+    idleCutoffHz: 480,
+    loadCutoffHz: 3_200,
+    level: 0.96,
+    redlineRpm: 6_200,
+    whine: 0.16,
   },
 } satisfies Record<string, EngineVoice>;
 
 export type VoiceId = keyof typeof ENGINE_VOICES;
-export const VOICE_IDS = ['shelby', 'c63'] as const satisfies readonly VoiceId[];
+export const VOICE_IDS = Object.keys(ENGINE_VOICES) as VoiceId[];
 export const DEFAULT_VOICE: VoiceId = 'shelby';
 
 function exhaustPulse(phase: number, voice: EngineVoice) {

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { IDLE_RPM, REDLINE_RPM } from '../lib/drive-model';
-import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
+import { IDLE_RPM } from '../lib/drive-model';
+import { ENGINE_VOICES, VOICE_IDS, type VoiceId } from '../lib/engine-wave';
 import { useEngine } from '../lib/use-engine';
 
 const gearNumbers = [1, 2, 3, 4, 5, 6];
@@ -10,9 +10,14 @@ const gearNumbers = [1, 2, 3, 4, 5, 6];
 export default function EngineConsole() {
   const engine = useEngine();
   const { frame, mode, path, state } = engine;
+  const voice = ENGINE_VOICES[engine.voice];
+  const { redlineRpm } = voice;
   const running = state === 'playing';
   const active = running || state === 'paused' || state === 'starting';
-  const rpmFill = (frame.rpm - IDLE_RPM) / (REDLINE_RPM - IDLE_RPM) * 100;
+  const rpm = Math.min(frame.rpm, redlineRpm);
+  const rpmPercent = (value: number) => (value - IDLE_RPM) / (redlineRpm - IDLE_RPM) * 100;
+  const rpmLabels = [IDLE_RPM, ...[2_000, 3_000, 4_000, 5_000, 6_000, 7_000, 8_000]
+    .filter((mark) => mark <= redlineRpm - 650), redlineRpm];
   const loadPercent = Math.round(frame.load * 100);
   const status = { off: 'Sound off', starting: 'Starting audio', playing: 'Sound on', paused: 'Audio paused', error: 'Audio error' }[state];
   const audioPath = path === 'worklet' ? 'AudioWorklet' : path === 'fallback' ? 'Web Audio fallback' : 'Web Audio';
@@ -28,7 +33,7 @@ export default function EngineConsole() {
         <div className="engine-intro">
           <div>
             <h1>V8 GPS Edition<span>.</span></h1>
-            <p>Synthesized V8 · six-speed virtual gearbox</p>
+            <p>Synthesized engine sounds · six-speed virtual gearbox</p>
           </div>
           <div className="engine-actions">
             <button className="button primary" onClick={() => void engine.start()} disabled={running || state === 'starting'}>
@@ -49,15 +54,21 @@ export default function EngineConsole() {
             </div>
             <div className="tachometer">
               <div className="tach-reading">
-                <strong>{frame.rpm.toLocaleString('en-US')}</strong><span>RPM</span>
+                <strong>{rpm.toLocaleString('en-US')}</strong><span>RPM</span>
               </div>
               <div
-                className={`tach-track ${frame.rpm >= 6_000 ? 'tach-high' : ''}`}
-                role="meter" aria-label="Engine RPM" aria-valuemin={IDLE_RPM} aria-valuemax={REDLINE_RPM} aria-valuenow={frame.rpm}
+                className={`tach-track ${rpm >= redlineRpm - 800 ? 'tach-high' : ''}`}
+                role="meter" aria-label="Engine RPM" aria-valuemin={IDLE_RPM} aria-valuemax={redlineRpm} aria-valuenow={rpm}
               >
-                <div className="tach-fill" style={{ width: `${rpmFill}%` }} />
+                <div className="tach-fill" style={{ width: `${rpmPercent(rpm)}%` }} />
               </div>
-              <div className="tach-labels" aria-hidden="true"><span>780</span><span>2K</span><span>3K</span><span>4K</span><span>5K</span><span>6K</span><span>6.8K</span></div>
+              <div className="tach-labels" aria-hidden="true">
+                {rpmLabels.map((mark) => (
+                  <span key={mark} style={{ left: `${rpmPercent(mark)}%` }}>
+                    {mark === IDLE_RPM ? mark : `${mark / 1000}K`}
+                  </span>
+                ))}
+              </div>
             </div>
             <dl className="engine-readings">
               <div><dt>GPS speed</dt><dd>{frame.speed === null ? '—' : frame.speed.toFixed(1)} <span>km/h</span></dd></div>
@@ -78,15 +89,14 @@ export default function EngineConsole() {
             <div className="panel-heading"><h2 id="engine-controls">Sound controls</h2></div>
             <div className="engine-settings-body">
               <div className="voice-picker">
-                <div className="dial-label" id="engine-voice">Engine sound</div>
-                <div className="mode-picker" aria-labelledby="engine-voice" role="group">
-                  {VOICE_IDS.map((id) => (
-                    <button key={id} className="button" aria-pressed={engine.voice === id} onClick={() => engine.setVoice(id)}>
-                      {ENGINE_VOICES[id].label}
-                    </button>
-                  ))}
+                <label className="dial-label" htmlFor="engine-voice">Engine sound</label>
+                <div className="voice-select">
+                  <select id="engine-voice" value={engine.voice}
+                    onChange={(event) => engine.setVoice(event.target.value as VoiceId)}>
+                    {VOICE_IDS.map((id) => <option key={id} value={id}>{ENGINE_VOICES[id].label}</option>)}
+                  </select>
                 </div>
-                <p>{ENGINE_VOICES[engine.voice].description}</p>
+                <p>{voice.description}</p>
               </div>
               <div className="mode-picker" aria-label="Engine mode" role="group">
                 <button className="button" aria-pressed={mode === 'manual'} onClick={() => engine.setMode('manual')}>Manual Mode</button>
@@ -95,7 +105,7 @@ export default function EngineConsole() {
               {mode === 'manual' ? (
                 <div className="mode-controls">
                   <label className="dial-label" htmlFor="manual-rpm"><span>Target RPM</span><b>{engine.manualRpm.toLocaleString('en-US')}</b></label>
-                  <input id="manual-rpm" type="range" min={IDLE_RPM} max={REDLINE_RPM} step={20}
+                  <input id="manual-rpm" type="range" min={IDLE_RPM} max={redlineRpm} step={20}
                     value={engine.manualRpm} onChange={(event) => engine.setManualRpm(event.target.valueAsNumber)} />
                   <button className="button rev-button" onClick={engine.rev} disabled={!running}>Rev</button>
                 </div>

@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { clamp, driveTarget, IDLE_RPM, REDLINE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from './drive-model';
+import { clamp, driveTarget, IDLE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from './drive-model';
 import type { SpeedTracking, Transmission } from './drive-model';
 import { EngineAudio, type AudioPath } from './engine-audio';
-import { DEFAULT_VOICE, type VoiceId } from './engine-wave';
+import { DEFAULT_VOICE, ENGINE_VOICES, type VoiceId } from './engine-wave';
 import { makeFix, OPTIONS } from './gps';
 
 export type EngineMode = 'manual' | 'gps';
@@ -115,14 +115,15 @@ export function useEngine() {
       const dt = clamp((now - last) / 1000, 0, 0.12);
       last = now;
       const input = controls.current;
+      const { redlineRpm } = ENGINE_VOICES[input.voice];
       if (input.mode !== previousMode) transmission = null;
       previousMode = input.mode;
       const inDrive = input.mode === 'gps';
       const reading = gps.current;
-      const drive = inDrive ? driveTarget(reading.tracking, transmission, now) : null;
+      const drive = inDrive ? driveTarget(reading.tracking, transmission, now, redlineRpm) : null;
       transmission = drive?.fresh ? drive : null;
       const revving = now < input.revUntil;
-      const targetRpm = drive?.rpm ?? (revving ? REDLINE_RPM - 260 : input.manualRpm);
+      const targetRpm = drive?.rpm ?? (revving ? Math.max(input.manualRpm, redlineRpm - 260) : input.manualRpm);
       const delta = targetRpm - rpm;
       const relax = inDrive ? 0.085 : targetRpm > rpm ? 0.16 : 0.22;
       rpm += delta * (1 - Math.exp(-dt / relax));
@@ -195,6 +196,11 @@ export function useEngine() {
     mode, manualRpm, volume, voice, preferWorklet, state, path, error, frame, start, stop, setMode, setPreferWorklet,
     setVoice(id: VoiceId) {
       controls.current.voice = id;
+      const limit = ENGINE_VOICES[id].redlineRpm;
+      if (controls.current.manualRpm > limit) {
+        controls.current.manualRpm = limit;
+        renderManualRpm(limit);
+      }
       renderVoice(id);
     },
     setManualRpm(value: number) {

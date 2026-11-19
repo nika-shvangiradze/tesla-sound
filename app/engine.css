@@ -33,7 +33,10 @@
 }
 .tach-fill { height: 100%; background: var(--accent); transition: width 75ms linear, background-color 160ms ease; }
 .tach-high .tach-fill { background: #ff9e6a; }
-.tach-labels { display: flex; justify-content: space-between; margin-top: 8px; color: var(--muted); font: 13px var(--mono); }
+.tach-labels { position: relative; height: 16px; margin-top: 8px; color: var(--muted); font: 13px var(--mono); }
+.tach-labels span { position: absolute; transform: translateX(-50%); }
+.tach-labels span:first-child { transform: none; }
+.tach-labels span:last-child { transform: translateX(-100%); }
 .engine-readings {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -69,7 +72,33 @@
 .engine-settings-body { padding: 16px 19px; }
 .mode-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .voice-picker { display: grid; gap: 7px; margin-bottom: 13px; }
-.voice-picker .button { min-height: 44px; padding-inline: 8px; }
+.voice-select { position: relative; }
+.voice-select select {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  appearance: none;
+  padding: 8px 40px 8px 13px;
+  border: 1px solid #4da598;
+  border-radius: 8px;
+  background: #173632;
+  color: #a4fbec;
+  font-size: .95rem;
+  font-weight: 650;
+}
+.voice-select::after {
+  position: absolute;
+  top: calc(50% - 6px);
+  right: 16px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #a4fbec;
+  border-bottom: 2px solid #a4fbec;
+  content: '';
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.voice-select option { background: var(--panel); color: var(--text); }
 .voice-picker p { color: var(--muted); font-size: .85rem; }
 .mode-picker .button[aria-pressed="true"] { color: #a4fbec; border-color: #4da598; background: #173632; }
 .mode-controls { margin: 12px 0; min-height: 104px; }
@@ -77,7 +106,7 @@
 .dial-label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; }
 .dial-label b { font-family: var(--mono); color: var(--accent); }
 .engine-settings input[type="range"] { display: block; width: 100%; height: 40px; accent-color: var(--accent); }
-.engine-settings input:focus-visible, .engine-nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.engine-settings input:focus-visible, .voice-select select:focus-visible, .engine-nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .rev-button { width: 100%; }
 .volume-controls { padding-top: 13px; border-top: 1px solid var(--line); }
 .worklet-option { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 42px; color: var(--muted); font-size: .875rem; }
