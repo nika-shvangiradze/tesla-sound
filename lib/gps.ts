@@ -1,5 +1,6 @@
 export const STALE_MS = 5_000;
 export const FIRST_FIX_MS = 12_000;
+const EPOCH_TOLERANCE_MS = 24 * 60 * 60 * 1000;
 export const OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
   maximumAge: 0,
@@ -9,6 +10,7 @@ export const OPTIONS: PositionOptions = {
 export type Fix = {
   receivedAtMs: number;
   elapsedMs: number;
+  rawPositionTimestamp: number | null;
   positionTimestampMs: number | null;
   dataAgeMs: number | null;
   callbackIntervalMs: number | null;
@@ -21,18 +23,34 @@ export function finite(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+export function positionTiming(rawPositionTimestamp: number | null, receivedAtMs: number, previousTimestampMs?: number | null) {
+  // A live, uncached position should be close to the browser's wall clock.
+  // Only convert microseconds when the result is recognizable as epoch time.
+  let positionTimestampMs: number | null = null;
+  if (rawPositionTimestamp !== null && rawPositionTimestamp > 0) {
+    if (Math.abs(receivedAtMs - rawPositionTimestamp) <= EPOCH_TOLERANCE_MS) {
+      positionTimestampMs = rawPositionTimestamp;
+    } else if (Math.abs(receivedAtMs - rawPositionTimestamp / 1000) <= EPOCH_TOLERANCE_MS) {
+      positionTimestampMs = rawPositionTimestamp / 1000;
+    }
+  }
+  return {
+    rawPositionTimestamp,
+    positionTimestampMs,
+    dataAgeMs: positionTimestampMs === null ? null : receivedAtMs - positionTimestampMs,
+    positionIntervalMs: positionTimestampMs !== null && previousTimestampMs != null
+      ? positionTimestampMs - previousTimestampMs : null,
+  };
+}
+
 export function makeFix(position: GeolocationPosition, receivedAtMs: number, elapsedMs: number, previous?: Fix): Fix {
-  const timestamp = finite(position.timestamp);
   const speed = finite(position.coords.speed);
   const accuracy = finite(position.coords.accuracy);
   return {
     receivedAtMs,
     elapsedMs,
-    positionTimestampMs: timestamp,
-    dataAgeMs: timestamp === null ? null : receivedAtMs - timestamp,
+    ...positionTiming(finite(position.timestamp), receivedAtMs, previous?.positionTimestampMs),
     callbackIntervalMs: previous ? elapsedMs - previous.elapsedMs : null,
-    positionIntervalMs: timestamp !== null && previous?.positionTimestampMs != null
-      ? timestamp - previous.positionTimestampMs : null,
     speedKmh: speed !== null && speed >= 0 ? finite(speed * 3.6) : null,
     accuracyM: accuracy !== null && accuracy >= 0 ? accuracy : null,
   };

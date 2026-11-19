@@ -29,7 +29,7 @@ function ReportSummary({ report }: { report: DiagnosticReport }) {
         <Row label={stoppedAtMs === null ? 'Elapsed at capture' : 'Test duration'}>{elapsed}</Row>
         <Row label="GPS fixes">{fixes.length}</Row>
         <Row label="Fixes with speed">{stats.speed.count} / {fixes.length}</Row>
-        <Row label="GPS status">{signal}</Row>
+        <Row label="GPS status at capture">{signal}</Row>
       </dl>
       <div className="photo-sections">
         <section aria-labelledby="photo-timing">
@@ -39,7 +39,7 @@ function ReportSummary({ report }: { report: DiagnosticReport }) {
             <Row label="Callback interval · median / p95">{timing(stats.intervals.median, stats.intervals.p95)}</Row>
             <Row label="Position interval · median / p95">{timing(stats.positionIntervals.median, stats.positionIntervals.p95)}</Row>
             <Row label="Data age · median / p95">{timing(stats.ages.median, stats.ages.p95)}</Row>
-            <Row label="Negative data ages">{stats.negativeAges}</Row>
+            <Row label="Unusable timestamps">{stats.unusableTimestamps} / {fixes.length}</Row>
             <Row label="Longest callback interval">{measure(stats.intervals.max, 'ms')}</Row>
           </dl>
         </section>

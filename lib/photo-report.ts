@@ -1,4 +1,5 @@
 import type { Run } from './diagnostic';
+import { finite, positionTiming } from './gps.ts';
 
 export const SAVED_REPORT_KEY = 'voltsound.saved-report.v1';
 
@@ -14,6 +15,13 @@ export function readReport(json: string): DiagnosticReport {
       !Array.isArray(report.fixes) || !Array.isArray(report.events) || !report.capabilities) {
     throw new Error('Invalid VoltSound report.');
   }
+  let previousTimestamp: number | null = null;
+  report.fixes = report.fixes.map((fix) => {
+    const timing = Object.hasOwn(fix, 'rawPositionTimestamp') ? fix
+      : { ...fix, ...positionTiming(finite(fix.positionTimestampMs), fix.receivedAtMs, previousTimestamp) };
+    previousTimestamp = timing.positionTimestampMs;
+    return timing;
+  });
   return report;
 }
 
@@ -44,7 +52,7 @@ export function summarizeReport(report: DiagnosticReport) {
     intervals: stats(intervals),
     positionIntervals: stats(fixes.map((fix) => fix.positionIntervalMs)),
     ages: stats(ages),
-    negativeAges: ages.filter((age) => age !== null && age < 0).length,
+    unusableTimestamps: fixes.filter((fix) => fix.positionTimestampMs === null).length,
     speed: stats(fixes.map((fix) => fix.speedKmh)),
     accuracy: stats(fixes.map((fix) => fix.accuracyM)),
     callbackGaps: [...intervals, trailingGap].filter((ms) => ms !== null && ms >= threshold).length,

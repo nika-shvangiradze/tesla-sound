@@ -32,3 +32,26 @@ test('watchdog detects missing callbacks and stale timestamps independently', ()
   const stale = makeFix(position(0, 1000), 1000 + STALE_MS, 250);
   assert.match(gapReason(stale, 250) ?? '', /timestamp/);
 });
+
+test('Tesla-like relative microseconds keep speed and callback timing without causing false signal loss', () => {
+  const received = 1_800_000_000_000;
+  const first = makeFix(position(5, 80_000_000_000), received, 5_000);
+  const next = makeFix(position(10, 80_000_100_000), received + 100, 5_100, first);
+  assert.equal(next.rawPositionTimestamp, 80_000_100_000);
+  assert.equal(next.positionTimestampMs, null);
+  assert.equal(next.positionIntervalMs, null);
+  assert.equal(next.dataAgeMs, null);
+  assert.equal(next.callbackIntervalMs, 100);
+  assert.equal(next.speedKmh, 36);
+  assert.equal(gapReason(next, 5_193), null);
+  assert.match(gapReason(next, 5_100 + 9_676) ?? '', /No GPS callback/);
+});
+
+test('epoch microseconds can be normalized when they match the browser wall clock', () => {
+  const received = 1_800_000_000_000;
+  const first = makeFix(position(5, (received - 200) * 1000), received, 0);
+  const next = makeFix(position(10, (received - 100) * 1000), received + 100, 100, first);
+  assert.equal(next.positionTimestampMs, received - 100);
+  assert.equal(next.positionIntervalMs, 100);
+  assert.equal(next.dataAgeMs, 200);
+});
