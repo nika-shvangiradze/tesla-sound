@@ -48,7 +48,7 @@ export async function probeAudio(
     }
     phase = 'worklet';
     update({ worklet: 'testing' });
-    await bounded(context.audioWorklet.addModule(new URL('audio-probe.js', window.location.href).href));
+    await bounded(context.audioWorklet.addModule('/audio-probe.js'));
     node = new AudioWorkletNode(context, 'voltsound-probe', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1] });
     const worklet = node;
     await bounded(new Promise<void>((resolve, reject) => {

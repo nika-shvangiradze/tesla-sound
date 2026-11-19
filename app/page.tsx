@@ -1,5 +1,5 @@
-import Dashboard from '../components/dashboard';
+import EngineConsole from '../components/engine-console';
 
 export default function Page() {
-  return <Dashboard />;
+  return <EngineConsole />;
 }

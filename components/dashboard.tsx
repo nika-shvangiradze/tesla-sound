@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { ApiState, Vector } from '../lib/diagnostic';
 import { useDiagnostic } from '../lib/use-diagnostic';
@@ -70,7 +71,10 @@ export default function Dashboard() {
     <div className="shell">
       <header className="topbar">
         <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></div>
-        <div className="topbar-meta"><span>MODEL 3 DIAGNOSTICS</span><span className="version">V1.0</span></div>
+        <div className="topbar-meta">
+          <span>MODEL 3 DIAGNOSTICS</span><span className="version">V1.0</span>
+          <Link className="engine-nav" href="/">V8 GPS Edition</Link>
+        </div>
       </header>
 
       <main>

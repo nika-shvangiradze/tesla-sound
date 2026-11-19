@@ -11,7 +11,7 @@
     "build": "next build",
     "typecheck": "next typegen && tsc --noEmit",
     "preview": "serve out -l 3000",
-    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/gps.test.mts tests/photo-report.test.mts"
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/gps.test.mts tests/photo-report.test.mts tests/engine.test.mts"
   },
   "dependencies": {
     "next": "16.4.6",
