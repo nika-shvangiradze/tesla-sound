@@ -72,7 +72,21 @@ test('the flat-six, flat-plane V8 and Hellcat profiles each generate a distinct 
   assert.notDeepEqual(ferrari, porsche);
   assert.notDeepEqual(ferrari, hellcat);
   assert.notDeepEqual(porsche, hellcat);
-  assert.ok(ENGINE_VOICES.hellcat.whine > 0);
+  assert.ok(ENGINE_VOICES.hellcat.whine.level > 0);
+});
+
+test('the new presets use different firing patterns and distinguish Demon boost from Hellcat', () => {
+  const presets = [['countach', 12], ['huracan', 10], ['demon', 8], ['subaru', 4]] as const;
+  for (const [id, cylinders] of presets) {
+    const voice = ENGINE_VOICES[id];
+    assert.equal(voice.banks.length, cylinders);
+    assert.equal(voice.timing.length, cylinders);
+    assert.equal(voice.pulseStrength.length, cylinders);
+    assert.ok(VOICE_IDS.includes(id));
+  }
+  assert.ok(ENGINE_VOICES.demon.whine.level > ENGINE_VOICES.hellcat.whine.level);
+  assert.ok(ENGINE_VOICES.demon.whine.rpmRatio > ENGINE_VOICES.hellcat.whine.rpmRatio);
+  assert.ok(ENGINE_VOICES.subaru.whine.level < ENGINE_VOICES.hellcat.whine.level);
 });
 
 test('C63 emphasizes higher engine orders than Shelby at the same RPM', () => {

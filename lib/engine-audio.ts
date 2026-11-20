@@ -20,8 +20,8 @@ export class EngineAudio {
   private readonly tone: BiquadFilterNode;
   private readonly master: GainNode;
   private readonly gate: GainNode;
-  private readonly blower: OscillatorNode;
-  private readonly blowerGain: GainNode;
+  private readonly boostTone: OscillatorNode;
+  private readonly boostGain: GainNode;
   private worklet: { node: AudioWorkletNode; gain: GainNode; rpm: AudioParam } | null = null;
   private disposed = false;
   private rpm = IDLE_RPM;
@@ -55,11 +55,11 @@ export class EngineAudio {
       this.tone.type = 'lowpass';
       this.tone.frequency.value = ENGINE_VOICES[voice].idleCutoffHz;
       this.tone.Q.value = 0.48;
-      this.blower = context.createOscillator();
-      this.blower.frequency.value = this.blowerFrequency(IDLE_RPM);
-      this.blowerGain = context.createGain();
-      this.blowerGain.gain.value = 0;
-      this.blower.connect(this.blowerGain).connect(this.tone);
+      this.boostTone = context.createOscillator();
+      this.boostTone.frequency.value = IDLE_RPM * (ENGINE_VOICES[voice].whine?.rpmRatio ?? 0.30) + 30;
+      this.boostGain = context.createGain();
+      this.boostGain.gain.value = 0;
+      this.boostTone.connect(this.boostGain).connect(this.tone);
       const highpass = context.createBiquadFilter();
       highpass.type = 'highpass';
       highpass.frequency.value = 24;
@@ -78,7 +78,7 @@ export class EngineAudio {
       this.tone.connect(highpass).connect(this.gate).connect(limiter).connect(this.master).connect(context.destination);
       const start = context.currentTime;
       this.sources.forEach(({ source }) => source.start(start));
-      this.blower.start(start);
+      this.boostTone.start(start);
     } catch (error) {
       void context.close().catch(() => {});
       throw error;
@@ -89,10 +89,6 @@ export class EngineAudio {
     return rpm * this.loopDuration / 120;
   }
 
-  private blowerFrequency(rpm: number) {
-    return rpm * 0.30 + 30;
-  }
-
   async resume() {
     await deadline(this.context.resume(), 4_000);
     if (this.context.state !== 'running') throw new Error('The browser paused audio output.');
@@ -101,26 +97,29 @@ export class EngineAudio {
   update(rpm: number, load: number, volume: number, voice: VoiceId) {
     if (this.disposed) return;
     const now = this.context.currentTime;
-    if (Math.abs(rpm - this.rpm) > 2) {
+    const config = ENGINE_VOICES[voice];
+    const rpmChanged = Math.abs(rpm - this.rpm) > 2;
+    const voiceChanged = this.voice !== voice;
+    const loadChanged = Math.abs(load - this.load) > 0.008;
+    if (rpmChanged) {
       this.rpm = rpm;
       const rate = this.playbackRate(rpm);
       this.sources.forEach(({ source }) => source.playbackRate.setTargetAtTime(rate, now, 0.035));
       this.worklet?.rpm.setTargetAtTime(rpm, now, 0.035);
-      this.blower.frequency.setTargetAtTime(this.blowerFrequency(rpm), now, 0.035);
     }
-    const voiceChanged = this.voice !== voice;
-    const loadChanged = Math.abs(load - this.load) > 0.008;
+    if (config.whine && (rpmChanged || voiceChanged)) {
+      this.boostTone.frequency.setTargetAtTime(this.rpm * config.whine.rpmRatio + 30, now, 0.035);
+    }
     if (voiceChanged) {
       this.voice = voice;
       this.sources.forEach(({ id, gain }) => gain.gain.setTargetAtTime(id === voice ? 1 : 0, now, 0.035));
       this.worklet?.node.port.postMessage(VOICE_IDS.indexOf(voice));
     }
     if (voiceChanged || loadChanged) {
-      const config = ENGINE_VOICES[voice];
       this.load = load;
       this.tone.frequency.setTargetAtTime(config.idleCutoffHz + config.loadCutoffHz * load, now, 0.055);
       this.gate.gain.setTargetAtTime((0.29 + 0.66 * load) * config.level, now, 0.045);
-      this.blowerGain.gain.setTargetAtTime(config.whine * load * load, now, 0.045);
+      this.boostGain.gain.setTargetAtTime((config.whine?.level ?? 0) * load * load, now, 0.045);
     }
     if (volume !== this.volume) {
       this.volume = volume;
@@ -132,7 +131,7 @@ export class EngineAudio {
     const { context } = this;
     try {
       if (!context.audioWorklet || typeof window.AudioWorkletNode !== 'function') throw new Error('Worklet unavailable.');
-      await deadline(context.audioWorklet.addModule('/engine-worklet.js?voices=5'), 3_000);
+      await deadline(context.audioWorklet.addModule('/engine-worklet.js?v=3'), 3_000);
       if (this.disposed) return;
       const node = new AudioWorkletNode(context, 'voltsound-engine', {
         numberOfInputs: 0,
@@ -193,7 +192,7 @@ export class EngineAudio {
     this.master.gain.cancelScheduledValues(time);
     this.master.gain.setTargetAtTime(0, time, 0.008);
     this.sources.forEach(({ source }) => source.stop(time + 0.045));
-    this.blower.stop(time + 0.045);
+    this.boostTone.stop(time + 0.045);
     window.setTimeout(() => {
       this.disconnectWorklet();
       void context.close().catch(() => {});

@@ -15,7 +15,7 @@ type EngineVoice = {
   loadCutoffHz: number;
   level: number;
   redlineRpm: number;
-  whine: number;
+  whine: { level: number; rpmRatio: number } | null;
 };
 
 const CROSS_PLANE_BANKS = [0, 1, 0, 0, 1, 0, 1, 1];
@@ -38,7 +38,7 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 2_150,
     level: 0.94,
     redlineRpm: 6_800,
-    whine: 0,
+    whine: null,
   },
   c63: {
     label: 'C63 AMG W204',
@@ -55,7 +55,7 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 3_450,
     level: 1.13,
     redlineRpm: 6_800,
-    whine: 0,
+    whine: null,
   },
   ferrari: {
     label: 'Ferrari 458 Italia',
@@ -72,7 +72,7 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 4_630,
     level: 0.98,
     redlineRpm: 9_000,
-    whine: 0,
+    whine: null,
   },
   porsche: {
     label: 'Porsche 911 GT3',
@@ -89,7 +89,7 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 4_180,
     level: 1.06,
     redlineRpm: 9_000,
-    whine: 0,
+    whine: null,
   },
   hellcat: {
     label: 'Dodge Challenger Hellcat',
@@ -106,7 +106,75 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 3_200,
     level: 0.96,
     redlineRpm: 6_200,
-    whine: 0.16,
+    whine: { level: 0.16, rpmRatio: 0.30 },
+  },
+  countach: {
+    label: 'Lamborghini Countach QV',
+    description: 'Layered, resonant classic V12',
+    banks: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+    pulseStrength: [1.03, 0.95, 1.01, 0.97, 1.04, 0.96, 1, 0.98, 1.02, 0.95, 1.04, 0.97],
+    timing: [0, 0.001, 0, -0.001, 0.001, 0, 0, 0.001, -0.001, 0, 0.001, 0],
+    attack: 455,
+    resonances: [[12, 32, 0.56], [24, 54, 0.38], [38, 78, 0.22], [58, 121, 0.09]],
+    bankDelay: 0.016,
+    crossover: 0.43,
+    rumble: 0.055,
+    idleCutoffHz: 660,
+    loadCutoffHz: 4_070,
+    level: 1.02,
+    redlineRpm: 7_500,
+    whine: null,
+  },
+  huracan: {
+    label: 'Lamborghini Huracán Performante',
+    description: 'Sharp, high-revving V10',
+    banks: [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+    pulseStrength: [1.04, 0.97, 1.02, 0.98, 1.01, 0.96, 1.04, 0.97, 1.02, 0.99],
+    timing: [0, 0.007, -0.005, 0.007, -0.004, 0.006, -0.005, 0.007, -0.004, 0.005],
+    attack: 650,
+    resonances: [[10, 45, 0.51], [20, 70, 0.40], [40, 92, 0.26], [63, 133, 0.12]],
+    bankDelay: 0.015,
+    crossover: 0.39,
+    rumble: 0.032,
+    idleCutoffHz: 840,
+    loadCutoffHz: 4_800,
+    level: 0.96,
+    redlineRpm: 8_500,
+    whine: null,
+  },
+  demon: {
+    label: 'Dodge Challenger SRT Demon',
+    description: 'Heavy HEMI rumble and aggressive supercharger whine',
+    banks: CROSS_PLANE_BANKS,
+    pulseStrength: [1.14, 0.85, 1.1, 0.94, 1.075, 0.89, 1.09, 0.94],
+    timing: [0, 0.005, -0.002, 0.004, -0.002, 0.003, -0.003, 0.002],
+    attack: 405,
+    resonances: [[8, 30, 0.64], [16, 54, 0.35], [36, 93, 0.20]],
+    bankDelay: 0.030,
+    crossover: 0.38,
+    rumble: 0.20,
+    idleCutoffHz: 505,
+    loadCutoffHz: 3_450,
+    level: 0.93,
+    redlineRpm: 6_500,
+    whine: { level: 0.23, rpmRatio: 0.35 },
+  },
+  subaru: {
+    label: 'Subaru Impreza WRX STI',
+    description: 'Offbeat flat-four burble with a light turbo whistle',
+    banks: [0, 0, 1, 1],
+    pulseStrength: [1.09, 0.86, 1.06, 0.90],
+    timing: [0, 0.052, -0.018, 0.029],
+    attack: 320,
+    resonances: [[4, 24, 0.65], [12, 42, 0.33], [23, 69, 0.18], [38, 109, 0.08]],
+    bankDelay: 0.054,
+    crossover: 0.54,
+    rumble: 0.24,
+    idleCutoffHz: 410,
+    loadCutoffHz: 2_100,
+    level: 1.08,
+    redlineRpm: 7_000,
+    whine: { level: 0.075, rpmRatio: 0.26 },
   },
 } satisfies Record<string, EngineVoice>;
 

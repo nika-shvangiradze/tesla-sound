@@ -4,13 +4,15 @@ Tesla Model 3-ის ჰორიზონტალური ეკრანი�
 
 ## V8-ის გამოცდა
 
-1. გაჩერებულ Tesla-ში გახსენი ძირითადი HTTPS მისამართი. **Engine sound**-ში აირჩიე **Shelby GT500 ’70**, **C63 AMG W204**, **Ferrari 458 Italia**, **Porsche 911 GT3** ან **Dodge Challenger Hellcat**. შემდეგ აირჩიე **Manual Mode** და დააჭირე **Start Sound**. ხმები სინთეზირებულია. პრესეტებს შორის გადართვა დაკვრის დროსაც შეგიძლია.
+1. გაჩერებულ Tesla-ში გახსენი ძირითადი HTTPS მისამართი. **Engine sound**-ში აირჩიე სასურველი პრესეტი, შემდეგ აირჩიე **Manual Mode** და დააჭირე **Start Sound**. ხმები სინთეზირებულია. პრესეტებს შორის გადართვა დაკვრის დროსაც შეგიძლია.
 2. შეცვალე **Target RPM** ან დააჭირე **Rev**. ხმამაღლობას **Volume**-ით მართავ, დაკვრას კი **Stop Sound** აჩერებს.
 3. GPS-ისთვის აირჩიე **GPS Drive**, დაუშვი ლოკაციაზე წვდომა და მგზავრობისას დააკვირდი RPM-სა და ვირტუალურ გადაცემას. მოძრაობისას ეკრანს მხოლოდ მგზავრი მართავს. დიაგნოსტიკა ხელმისაწვდომია **GPS Diagnostic** ბმულით ან `/diagnostic/` მისამართზე.
 
 ვირტუალური კოლოფი ექვსსაფეხურიანია. აპი სიჩქარის განახლებებს შორის ინტერვალებით აფასებს აჩქარებას და RPM-ისთვის იყენებს მაქსიმუმ 300 ms-ის პროგნოზს. თუ სიჩქარის ახალი ნიმუში 1.25 წამს არ მოვა, ძრავა რბილად უბრუნდება უქმ სვლას. გვერდის დამალვისას აპი ხმას აჩერებს.
 
 Ferrari-ს V8 და Porsche-ს ბოქსერული ექვსცილინდრიანი პრესეტები 9 000 RPM-მდე ადის. Hellcat-ის პრესეტში დატვირთვასთან ერთად კომპრესორის წუილი ემატება. [Ferrari-ის ტექნიკური ცნობები](https://cdn.ferrari.com/cms/network/media/pdf/16_f-1_prospectus.pdf) · [Porsche 911 GT3](https://newsroom.porsche.com/en/press-kits/911-GT3/Powertrain-and-performance.html) · [Dodge Challenger SRT](https://www.dodgegarage.com/news/article/press-room/2021/09/2022-dodge-challenger-challenger-srt-fact-sheet)
+
+სელექტორში ასევე არის **Lamborghini Countach QV**-ის V12, **Huracán Performante**-ს V10, **Dodge Challenger SRT Demon**-ის კომპრესორიანი V8 და **Subaru Impreza WRX STI**-ის ტურბო ბოქსერი. Demon-ის პრესეტი 2018 წლის მოდელითაა შთაგონებული, Subaru-ს პრესეტი კი 2004 წლის ჩრდილოამერიკული WRX STI-ით. [Countach](https://www.lamborghini.com/en-en/history/milestones) · [Huracán](https://www.lamborghini.com/en-en/history/huracan-performante) · [Demon](https://blog.stellantisnorthamerica.com/2017/06/08/creating-the-dodge-challenger-srt-demon-v-8/) · [Impreza WRX STI](https://www.subaru.ca/WebPage.aspx?ArticleID=598&WebPageId=5013&WebSiteId=284)
 
 ნაგულისხმევად ხმა იკვრება Web Audio-თი. **Try AudioWorklet** ჩართე ხმის გაშვებამდე, თუ ამ გზის გამოცდა გინდა. ჩატვირთვის ან დამუშავების შეცდომის დროს დაკვრა სტანდარტულ Web Audio-ზე გადადის. პედლიდან დინამიკამდე რეალური დაყოვნება მანქანაში უნდა გაიზომოს.
 
