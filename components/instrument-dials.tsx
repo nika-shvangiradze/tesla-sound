@@ -69,9 +69,8 @@ function Dial({ kind, value, max, redline }: {
         <div className="dial-arc" style={arc} />
         <DialScale max={max} major={tach ? 1000 : 40} minor={tach ? 200 : 10} redline={redline} />
         {tach && <span className="dial-scale-unit">×1000</span>}
-        {needleValue !== null && (
-          <div className="dial-hand" style={{ transform: `rotate(${angle(needleValue, max)}deg)` }}><i /></div>
-        )}
+        <div className={needleValue === null ? 'dial-hand dial-hand-parked' : 'dial-hand'}
+          style={{ transform: `rotate(${angle(needleValue ?? 0, max)}deg)` }}><i /></div>
         <div className="dial-hub" />
         <div className="dial-readout">
           <strong>{reading}</strong>
