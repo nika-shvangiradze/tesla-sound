@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './engine.css';
+import './instruments.css';
 
 export const metadata: Metadata = {
   title: 'VoltSound | V8 GPS Edition',

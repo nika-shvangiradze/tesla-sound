@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { IDLE_RPM } from '../lib/drive-model';
 import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
 import { useEngine } from '../lib/use-engine';
+import InstrumentDials from './instrument-dials';
 
 const gearNumbers = [1, 2, 3, 4, 5, 6];
 
@@ -15,9 +16,6 @@ export default function EngineConsole() {
   const running = state === 'playing';
   const active = running || state === 'paused' || state === 'starting';
   const rpm = Math.min(frame.rpm, redlineRpm);
-  const rpmPercent = (value: number) => (value - IDLE_RPM) / (redlineRpm - IDLE_RPM) * 100;
-  const rpmLabels = [IDLE_RPM, ...[2_000, 3_000, 4_000, 5_000, 6_000, 7_000, 8_000]
-    .filter((mark) => mark <= redlineRpm - 650), redlineRpm];
   const loadPercent = Math.round(frame.load * 100);
   const status = { off: 'Sound off', starting: 'Starting audio', playing: 'Sound on', paused: 'Audio paused', error: 'Audio error' }[state];
   const audioPath = path === 'worklet' ? 'AudioWorklet' : path === 'fallback' ? 'Web Audio fallback' : 'Web Audio';
@@ -52,26 +50,8 @@ export default function EngineConsole() {
               <h2 id="engine-instruments">Engine instruments</h2>
               <span className={`badge ${running ? 'badge-good' : state === 'error' ? 'badge-warning' : ''}`} role="status">{status}</span>
             </div>
-            <div className="tachometer">
-              <div className="tach-reading">
-                <strong>{rpm.toLocaleString('en-US')}</strong><span>RPM</span>
-              </div>
-              <div
-                className={`tach-track ${rpm >= redlineRpm - 800 ? 'tach-high' : ''}`}
-                role="meter" aria-label="Engine RPM" aria-valuemin={IDLE_RPM} aria-valuemax={redlineRpm} aria-valuenow={rpm}
-              >
-                <div className="tach-fill" style={{ width: `${rpmPercent(rpm)}%` }} />
-              </div>
-              <div className="tach-labels" aria-hidden="true">
-                {rpmLabels.map((mark) => (
-                  <span key={mark} style={{ left: `${rpmPercent(mark)}%` }}>
-                    {mark === IDLE_RPM ? mark : `${mark / 1000}K`}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <InstrumentDials voice={engine.voice} rpm={rpm} speed={frame.speed} />
             <dl className="engine-readings">
-              <div><dt>GPS speed</dt><dd>{frame.speed === null ? '—' : frame.speed.toFixed(1)} <span>km/h</span></dd></div>
               <div><dt>Virtual gear</dt><dd>{frame.gear ?? '—'}</dd></div>
               <div><dt>Engine load</dt><dd>{loadPercent}<span>%</span></dd></div>
             </dl>

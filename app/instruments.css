@@ -1,0 +1,188 @@
+.instrument-cluster {
+  --cluster-lit: #1c2525;
+  --dial-face: #101416;
+  --dial-light: #262d2c;
+  --dial-outer: #626d68;
+  --dial-edge: #252f2d;
+  --dial-label: #f3edda;
+  --dial-muted: #cac5b0;
+  --dial-accent: #dfcb94;
+  --dial-red: #f06b57;
+  --dial-hand: #f4ad5a;
+  --dial-readout: #111717;
+  --dial-type: Georgia, 'Times New Roman', serif;
+  --dial-tick-thick: 2px;
+  --dial-arc-width: 2px;
+  padding: 15px clamp(11px, 2.1vw, 25px) 19px;
+  background: radial-gradient(ellipse at 50% 15%, var(--cluster-lit), #0a1015 78%);
+  color: var(--dial-label);
+}
+.cluster-model {
+  margin-bottom: 11px;
+  text-align: center;
+  font: 650 .87rem/1.2 system-ui, sans-serif;
+  letter-spacing: .015em;
+}
+.cluster-model span { color: var(--dial-accent); margin-right: 3px; }
+.instrument-dials { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(7px, 1.4vw, 16px); }
+.dial {
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+  aspect-ratio: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 330px;
+  justify-self: center;
+  border: 1px solid var(--dial-outer);
+  border-radius: 50%;
+  background: conic-gradient(from -35deg, var(--dial-outer), var(--dial-edge), #0b0e10, var(--dial-outer), var(--dial-edge), var(--dial-outer));
+  box-shadow: 0 8px 15px #0009, inset 0 0 0 2px #ffffff17;
+}
+.dial-face {
+  position: absolute;
+  inset: 4.1%;
+  border: 1px solid var(--dial-outer);
+  border-radius: 50%;
+  background: radial-gradient(circle at 43% 35%, var(--dial-light), var(--dial-face) 72%);
+  box-shadow: inset 0 0 0 3px #0004, inset 0 0 18px #0005;
+}
+.dial-arc {
+  position: absolute;
+  inset: 4.35%;
+  border-radius: 50%;
+  background: conic-gradient(from -133deg, var(--dial-accent) 0 var(--dial-red-start), var(--dial-red) var(--dial-red-start) 266deg, transparent 266deg);
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - var(--dial-arc-width) - 1px), #000 calc(100% - var(--dial-arc-width)), #000 calc(100% - 1px), transparent);
+  opacity: .85;
+}
+.dial-scale, .dial-tick, .dial-hand { position: absolute; inset: 0; pointer-events: none; }
+.dial-tick { color: var(--dial-muted); }
+.dial-tick i {
+  position: absolute;
+  width: 1px;
+  height: 3%;
+  top: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: currentColor;
+  opacity: .67;
+}
+.dial-tick-major { color: var(--dial-label); }
+.dial-tick-major i { width: var(--dial-tick-thick); height: 5.25%; opacity: .98; }
+.dial-tick-red { color: var(--dial-red); }
+.dial-mark, .dial-scale-unit {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: var(--dial-label);
+  font: 650 clamp(8px, 5.7cqw, 17px)/1 var(--dial-type);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dial-scale-unit { top: 34%; left: 50%; color: var(--dial-muted); font: 650 clamp(7px, 4cqw, 12px)/1 var(--mono); }
+.dial-hand { z-index: 2; transition: transform 90ms linear; }
+.dial-hand i {
+  position: absolute;
+  top: 17%;
+  bottom: 45%;
+  left: 50%;
+  width: 3.25%;
+  transform: translateX(-50%);
+  clip-path: polygon(47% 0, 57% 0, 100% 77%, 83% 100%, 14% 100%, 0 77%);
+  background: linear-gradient(90deg, #fff8, transparent 55%), var(--dial-hand);
+}
+.dial-hub {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  height: 8%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--dial-outer);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, #8e9799, #22292c 55%, #101417 72%);
+  box-shadow: 0 1px 5px #000a;
+}
+.dial-readout {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  min-width: 30%;
+  transform: translateX(-50%);
+  padding: 3px 5%;
+  text-align: center;
+  border: 1px solid var(--dial-edge);
+  border-radius: 5px;
+  background: var(--dial-readout);
+  color: var(--dial-label);
+}
+.dial-readout strong { display: block; font: 650 clamp(14px, 11cqw, 31px)/1.05 var(--mono); letter-spacing: -.06em; white-space: nowrap; }
+.dial-readout span { display: block; margin-top: 3px; color: var(--dial-muted); font: 650 clamp(7px, 4.2cqw, 11px)/1 var(--mono); }
+
+.instrument-cluster[data-voice="c63"] {
+  --cluster-lit: #2c3039; --dial-face: #10131a; --dial-light: #2d333c;
+  --dial-outer: #b2bac0; --dial-edge: #424b54; --dial-label: #f2f5fa;
+  --dial-muted: #c3cdd6; --dial-accent: #d1dbe6; --dial-hand: #ff484d;
+  --dial-readout: #11161f; --dial-type: 'Segoe UI', sans-serif;
+}
+.instrument-cluster[data-voice="ferrari"] {
+  --cluster-lit: #2f2820; --dial-face: #101115; --dial-light: #282a31;
+  --dial-outer: #666473; --dial-edge: #383644; --dial-label: #fbf5e6;
+  --dial-muted: #ded3bf; --dial-accent: #f6ce54; --dial-hand: #ff5748;
+  --dial-readout: #171013; --dial-type: 'Arial Narrow', 'Segoe UI', sans-serif;
+}
+.instrument-cluster[data-voice="ferrari"] .dial-rpm {
+  --dial-face: #b9841c; --dial-light: #ffe078; --dial-edge: #543b0c;
+  --dial-label: #251c11; --dial-muted: #443319; --dial-accent: #5b4214;
+  --dial-red: #981d1b; --dial-hand: #8d2018; --dial-readout: #efca63;
+}
+.instrument-cluster[data-voice="porsche"] {
+  --cluster-lit: #303035; --dial-face: #16181d; --dial-light: #2f353e;
+  --dial-outer: #9a9fa4; --dial-edge: #383d41; --dial-label: #f5f5f2;
+  --dial-muted: #d7d9d9; --dial-accent: #e2e3dd; --dial-hand: #e65535;
+  --dial-readout: #101216; --dial-type: 'Arial Narrow', 'Segoe UI', sans-serif;
+}
+.instrument-cluster[data-voice="porsche"] .dial-rpm {
+  --dial-face: #9ea4a9; --dial-light: #f0f1ec; --dial-edge: #53595c;
+  --dial-label: #1d252c; --dial-muted: #343d46; --dial-accent: #4d5357;
+  --dial-red: #a92527; --dial-readout: #c8cac8;
+}
+.instrument-cluster[data-voice="porsche"] .instrument-dials,
+.instrument-cluster[data-voice="ferrari"] .instrument-dials,
+.instrument-cluster[data-voice="subaru"] .instrument-dials { grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr); }
+.instrument-cluster[data-voice="hellcat"] {
+  --cluster-lit: #351d26; --dial-face: #14151b; --dial-light: #2f2630;
+  --dial-outer: #757786; --dial-edge: #3d2e3b; --dial-label: #f6eef0;
+  --dial-muted: #d5bbc2; --dial-accent: #fc8a96; --dial-hand: #ff515e;
+  --dial-readout: #1f141a; --dial-type: 'Arial Narrow', system-ui, sans-serif;
+}
+.instrument-cluster[data-voice="countach"] {
+  --cluster-lit: #29271c; --dial-face: #151612; --dial-light: #292a20;
+  --dial-outer: #67654d; --dial-edge: #383626; --dial-label: #f1df9c;
+  --dial-muted: #e0ca8c; --dial-accent: #e5bd62; --dial-hand: #ff9d4a;
+  --dial-readout: #16170f; --dial-type: var(--mono); --dial-arc-width: 1px;
+}
+.instrument-cluster[data-voice="huracan"] {
+  --cluster-lit: #222c20; --dial-face: #121811; --dial-light: #222e20;
+  --dial-outer: #5f7660; --dial-edge: #303e2b; --dial-label: #eef6e8;
+  --dial-muted: #c6d9bd; --dial-accent: #c6f46e; --dial-hand: #d4fa81;
+  --dial-readout: #172116; --dial-type: var(--mono); --dial-tick-thick: 3px; --dial-arc-width: 4px;
+}
+.instrument-cluster[data-voice="huracan"] .dial-hand i { clip-path: polygon(50% 0, 100% 82%, 82% 100%, 18% 100%, 0 82%); }
+.instrument-cluster[data-voice="demon"] {
+  --cluster-lit: #381e22; --dial-face: #1c1117; --dial-light: #381f27;
+  --dial-outer: #80545a; --dial-edge: #50282f; --dial-label: #ffeeec;
+  --dial-muted: #ebc1bf; --dial-accent: #ff796a; --dial-hand: #ffb27d;
+  --dial-readout: #271619; --dial-type: 'Arial Narrow', system-ui, sans-serif; --dial-arc-width: 4px;
+}
+.instrument-cluster[data-voice="subaru"] {
+  --cluster-lit: #1c2a3c; --dial-face: #101722; --dial-light: #23384b;
+  --dial-outer: #788dab; --dial-edge: #324359; --dial-label: #ecf7ff;
+  --dial-muted: #c0d7ed; --dial-accent: #a0d6ff; --dial-hand: #ff5c64;
+  --dial-readout: #152334; --dial-type: 'Segoe UI', sans-serif;
+}
+@media (max-width: 430px) {
+  .instrument-cluster { padding-block: 12px 13px; }
+  .dial-readout { padding-top: 2px; padding-bottom: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .dial-hand { transition: none; } }
