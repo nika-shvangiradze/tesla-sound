@@ -1,4 +1,5 @@
 export const REFERENCE_RPM = 1_600;
+export const LOOP_CYCLES = 4;
 
 type EngineVoice = {
   make: string;
@@ -16,6 +17,8 @@ type EngineVoice = {
   loadCutoffHz: number;
   level: number;
   redlineRpm: number;
+  revRiseSeconds: number;
+  shiftTimeScale: number;
   whine: { level: number; rpmRatio: number } | null;
 };
 
@@ -40,6 +43,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 2_150,
     level: 0.94,
     redlineRpm: 6_800,
+    revRiseSeconds: 0.19,
+    shiftTimeScale: 1.30,
     whine: null,
   },
   c63: {
@@ -58,6 +63,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 3_450,
     level: 1.13,
     redlineRpm: 6_800,
+    revRiseSeconds: 0.14,
+    shiftTimeScale: 0.96,
     whine: null,
   },
   ferrari: {
@@ -76,6 +83,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 4_630,
     level: 0.98,
     redlineRpm: 9_000,
+    revRiseSeconds: 0.095,
+    shiftTimeScale: 0.74,
     whine: null,
   },
   porsche: {
@@ -94,6 +103,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 4_180,
     level: 1.06,
     redlineRpm: 9_000,
+    revRiseSeconds: 0.10,
+    shiftTimeScale: 0.78,
     whine: null,
   },
   hellcat: {
@@ -112,6 +123,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 3_200,
     level: 0.96,
     redlineRpm: 6_200,
+    revRiseSeconds: 0.15,
+    shiftTimeScale: 0.91,
     whine: { level: 0.16, rpmRatio: 0.30 },
   },
   countach: {
@@ -130,6 +143,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 4_070,
     level: 1.02,
     redlineRpm: 7_500,
+    revRiseSeconds: 0.17,
+    shiftTimeScale: 1.38,
     whine: null,
   },
   huracan: {
@@ -148,6 +163,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 4_800,
     level: 0.96,
     redlineRpm: 8_500,
+    revRiseSeconds: 0.10,
+    shiftTimeScale: 0.72,
     whine: null,
   },
   demon: {
@@ -166,6 +183,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 3_450,
     level: 0.93,
     redlineRpm: 6_500,
+    revRiseSeconds: 0.14,
+    shiftTimeScale: 0.85,
     whine: { level: 0.23, rpmRatio: 0.35 },
   },
   subaru: {
@@ -184,6 +203,8 @@ export const ENGINE_VOICES = {
     loadCutoffHz: 2_100,
     level: 1.08,
     redlineRpm: 7_000,
+    revRiseSeconds: 0.155,
+    shiftTimeScale: 1.10,
     whine: { level: 0.075, rpmRatio: 0.26 },
   },
 } satisfies Record<string, EngineVoice>;
@@ -231,4 +252,15 @@ export function makeEngineWave(length: number, voiceId: VoiceId = DEFAULT_VOICE)
     for (let frame = 0; frame < length; frame++) channel[frame] = (channel[frame] - mean) * gain;
   }
   return channels;
+}
+
+export function makeEngineLoop(cycleFrames: number, voiceId: VoiceId) {
+  const depth = 0.025 + ENGINE_VOICES[voiceId].rumble * 0.33;
+  const length = cycleFrames * LOOP_CYCLES;
+  return makeEngineWave(cycleFrames, voiceId).map((cycle, bank) =>
+    Float32Array.from({ length }, (_, frame) => {
+      const angle = frame / length * Math.PI * 2;
+      const variation = 0.72 * Math.sin(angle + bank * 0.65) + 0.28 * Math.sin(angle * 3 + 0.4);
+      return cycle[frame % cycleFrames] * (1 + depth * variation);
+    }));
 }

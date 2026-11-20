@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { driveTarget, IDLE_RPM, REDLINE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from '../lib/drive-model.ts';
-import { ENGINE_VOICES, makeEngineWave, VOICE_IDS } from '../lib/engine-wave.ts';
+import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, makeEngineWave, VOICE_IDS } from '../lib/engine-wave.ts';
 
 test('GPS drive starts in a suitable gear and locks shifts until the shift interval elapses', () => {
   const cruising = trackSpeed(85, 1000, null);
@@ -12,7 +12,13 @@ test('GPS drive starts in a suitable gear and locks shifts until the shift inter
   const later = driveTarget(cruising, early, 1400);
   assert.equal(early.gear, 1);
   assert.equal(later.gear, 2);
-  assert.ok(later.rpm < early.rpm);
+  assert.equal(later.shift, 'up');
+  assert.ok(later.load < early.load);
+  const engaged = driveTarget(trackSpeed(85, 1558, null), later, 1558);
+  assert.equal(engaged.gear, 2);
+  assert.equal(engaged.shift, null);
+  assert.ok(engaged.rpm < later.rpm);
+  assert.ok(engaged.load > later.load);
 });
 
 test('prediction raises RPM on acceleration and tapers away before a GPS outage returns to idle', () => {
@@ -33,6 +39,39 @@ test('at zero speed the virtual gearbox returns to first and idles', () => {
   assert.equal(target.gear, 1);
   assert.equal(target.rpm, IDLE_RPM);
   assert.equal(target.fresh, true);
+});
+
+test('a downshift blends into the lower gear with a load blip and returns to overrun', () => {
+  const decelerating = { ...trackSpeed(38, 1000, null), accelerationMps2: -2.8 };
+  const start = driveTarget(decelerating, { gear: 3, shiftedAtMs: -Infinity }, 1000);
+  assert.equal(start.gear, 2);
+  assert.equal(start.shift, 'down');
+  const blip = driveTarget({ ...decelerating, atMs: 1107 }, start, 1107);
+  const engaged = driveTarget({ ...decelerating, atMs: 1220 }, blip, 1220);
+  assert.ok(blip.rpm > start.rpm);
+  assert.ok(blip.load > engaged.load);
+  assert.equal(engaged.shift, null);
+  assert.ok(engaged.overrun > 0.7);
+});
+
+test('the faster shift profile engages sooner without changing the gear ratio', () => {
+  const tracking = trackSpeed(75, 1125, null);
+  const shifting = { gear: 2, fromGear: 1, shiftedAtMs: 1000 };
+  const quick = driveTarget(tracking, shifting, 1125, REDLINE_RPM, ENGINE_VOICES.huracan.shiftTimeScale);
+  const classic = driveTarget(tracking, shifting, 1125, REDLINE_RPM, ENGINE_VOICES.countach.shiftTimeScale);
+  assert.equal(quick.gear, classic.gear);
+  assert.equal(quick.shift, null);
+  assert.equal(classic.shift, 'up');
+  assert.ok(quick.rpm < classic.rpm);
+});
+
+test('the four-cycle engine loop adds variation without changing the cycle length or clipping', () => {
+  const frames = 3600;
+  const [wave] = makeEngineLoop(frames, 'shelby');
+  assert.equal(wave.length, frames * LOOP_CYCLES);
+  assert.ok(wave.every((sample) => Number.isFinite(sample) && Math.abs(sample) < 1));
+  assert.notDeepEqual(wave.slice(0, frames), wave.slice(frames, frames * 2));
+  assert.ok(Math.abs(wave[0] - wave[wave.length - 1]) < 0.05);
 });
 
 test('each engine voice keeps distinct stereo banks, bounded samples, and a smooth loop seam', () => {

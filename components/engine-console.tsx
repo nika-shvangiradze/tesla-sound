@@ -76,7 +76,10 @@ export default function EngineConsole() {
               <div><dt>Engine load</dt><dd>{loadPercent}<span>%</span></dd></div>
             </dl>
             <div className="engine-foot">
-              <span role="status">{frame.gpsStatus}</span>
+              <div className="drive-status">
+                <span role="status">{frame.gpsStatus}</span>
+                {frame.shift && <span className="badge badge-good">{frame.shift === 'up' ? 'Upshift' : 'Rev match'}</span>}
+              </div>
               {mode === 'gps' && (
                 <div className="gear-strip" aria-label="Six virtual gears">
                   {gearNumbers.map((gear) => <span key={gear} className={gear === frame.gear ? 'current-gear' : ''}>{gear}</span>)}

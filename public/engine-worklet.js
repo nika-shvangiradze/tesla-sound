@@ -6,6 +6,7 @@ class VoltSoundEngine extends AudioWorkletProcessor {
   constructor(options) {
     super();
     this.waves = options.processorOptions.waves;
+    this.cycles = options.processorOptions.cycles;
     this.voice = options.processorOptions.voice;
     this.gains = new Float64Array(this.waves.length);
     this.gains[this.voice] = 1;
@@ -38,7 +39,7 @@ class VoltSoundEngine extends AudioWorkletProcessor {
           channels[channel][frame] += (wave[index] + (wave[next] - wave[index]) * fraction) * gain;
         }
       }
-      phase += (rpm.length === 1 ? rpm[0] : rpm[frame]) * length / (120 * sampleRate);
+      phase += (rpm.length === 1 ? rpm[0] : rpm[frame]) * length / (120 * this.cycles * sampleRate);
       if (phase >= length) phase -= length;
     }
     this.phase = phase;
