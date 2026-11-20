@@ -1,7 +1,8 @@
 export const REFERENCE_RPM = 1_600;
 
 type EngineVoice = {
-  label: string;
+  make: string;
+  model: string;
   description: string;
   banks: readonly number[];
   pulseStrength: readonly number[];
@@ -24,7 +25,8 @@ const FLAT_SIX_BANKS = [0, 1, 0, 1, 0, 1];
 
 export const ENGINE_VOICES = {
   shelby: {
-    label: 'Shelby GT500 ’70',
+    make: 'Shelby',
+    model: 'GT500 ’70',
     description: 'Deep, loping big-block rumble',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.12, 0.83, 1.09, 0.89, 1.04, 0.91, 1.13, 0.81],
@@ -41,7 +43,8 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   c63: {
-    label: 'C63 AMG W204',
+    make: 'Mercedes-AMG',
+    model: 'C63 W204',
     description: 'Tight pulses and a brighter exhaust note',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.02, 0.97, 1.03, 0.95, 1.02, 0.96, 1.04, 0.97],
@@ -58,7 +61,8 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   ferrari: {
-    label: 'Ferrari 458 Italia',
+    make: 'Ferrari',
+    model: '458 Italia',
     description: 'High-revving flat-plane V8',
     banks: FLAT_PLANE_BANKS,
     pulseStrength: [1.02, 0.99, 0.97, 1.01, 1, 0.96, 1.03, 1],
@@ -75,7 +79,8 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   porsche: {
-    label: 'Porsche 911 GT3',
+    make: 'Porsche',
+    model: '911 GT3',
     description: 'Metallic flat-six exhaust note',
     banks: FLAT_SIX_BANKS,
     pulseStrength: [1, 0.96, 1.04, 0.95, 1.02, 0.98],
@@ -92,7 +97,8 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   hellcat: {
-    label: 'Dodge Challenger Hellcat',
+    make: 'Dodge',
+    model: 'Hellcat',
     description: 'HEMI V8 rumble with supercharger whine under load',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.06, 0.9, 1.07, 0.94, 1.04, 0.91, 1.08, 0.92],
@@ -109,7 +115,8 @@ export const ENGINE_VOICES = {
     whine: { level: 0.16, rpmRatio: 0.30 },
   },
   countach: {
-    label: 'Lamborghini Countach QV',
+    make: 'Lamborghini',
+    model: 'Countach QV',
     description: 'Layered, resonant classic V12',
     banks: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
     pulseStrength: [1.03, 0.95, 1.01, 0.97, 1.04, 0.96, 1, 0.98, 1.02, 0.95, 1.04, 0.97],
@@ -126,7 +133,8 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   huracan: {
-    label: 'Lamborghini Huracán Performante',
+    make: 'Lamborghini',
+    model: 'Huracán Performante',
     description: 'Sharp, high-revving V10',
     banks: [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
     pulseStrength: [1.04, 0.97, 1.02, 0.98, 1.01, 0.96, 1.04, 0.97, 1.02, 0.99],
@@ -143,7 +151,8 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   demon: {
-    label: 'Dodge Challenger SRT Demon',
+    make: 'Dodge',
+    model: 'SRT Demon',
     description: 'Heavy HEMI rumble and aggressive supercharger whine',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.14, 0.85, 1.1, 0.94, 1.075, 0.89, 1.09, 0.94],
@@ -160,7 +169,8 @@ export const ENGINE_VOICES = {
     whine: { level: 0.23, rpmRatio: 0.35 },
   },
   subaru: {
-    label: 'Subaru Impreza WRX STI',
+    make: 'Subaru',
+    model: 'Impreza WRX STI',
     description: 'Offbeat flat-four burble with a light turbo whistle',
     banks: [0, 0, 1, 1],
     pulseStrength: [1.09, 0.86, 1.06, 0.90],

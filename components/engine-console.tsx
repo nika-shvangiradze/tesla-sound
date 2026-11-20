@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { IDLE_RPM } from '../lib/drive-model';
-import { ENGINE_VOICES, VOICE_IDS, type VoiceId } from '../lib/engine-wave';
+import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
 import { useEngine } from '../lib/use-engine';
 
 const gearNumbers = [1, 2, 3, 4, 5, 6];
@@ -88,16 +88,25 @@ export default function EngineConsole() {
           <section className="panel engine-settings" aria-labelledby="engine-controls">
             <div className="panel-heading"><h2 id="engine-controls">Sound controls</h2></div>
             <div className="engine-settings-body">
-              <div className="voice-picker">
-                <label className="dial-label" htmlFor="engine-voice">Engine sound</label>
-                <div className="voice-select">
-                  <select id="engine-voice" value={engine.voice}
-                    onChange={(event) => engine.setVoice(event.target.value as VoiceId)}>
-                    {VOICE_IDS.map((id) => <option key={id} value={id}>{ENGINE_VOICES[id].label}</option>)}
-                  </select>
+              <fieldset className="voice-picker">
+                <legend>Engine sound</legend>
+                <div className="voice-grid">
+                  {VOICE_IDS.map((id) => {
+                    const { make, model } = ENGINE_VOICES[id];
+                    return (
+                      <div key={id} className="voice-choice">
+                        <input className="sr-only voice-radio" type="radio" name="engine-voice" id={`voice-${id}`}
+                          value={id} checked={engine.voice === id} onChange={() => engine.setVoice(id)} />
+                        <label className="voice-card" htmlFor={`voice-${id}`}>
+                          <span className="voice-make">{make}</span>
+                          <span className="voice-model">{model}</span>
+                        </label>
+                      </div>
+                    );
+                  })}
                 </div>
-                <p>{voice.description}</p>
-              </div>
+                <p className="voice-description">{voice.description}</p>
+              </fieldset>
               <div className="mode-picker" aria-label="Engine mode" role="group">
                 <button className="button" aria-pressed={mode === 'manual'} onClick={() => engine.setMode('manual')}>Manual Mode</button>
                 <button className="button" aria-pressed={mode === 'gps'} onClick={() => engine.setMode('gps')}>GPS Drive</button>
