@@ -1,7 +1,7 @@
 export const REFERENCE_RPM = 1_600;
 export const LOOP_CYCLES = 4;
 
-type EngineVoice = {
+export type EngineVoice = {
   make: string;
   model: string;
   description: string;
@@ -19,7 +19,7 @@ type EngineVoice = {
   redlineRpm: number;
   revRiseSeconds: number;
   shiftTimeScale: number;
-  whine: { level: number; rpmRatio: number } | null;
+  whine: { level: number; rpmRatio: number; coastLevel?: number } | null;
 };
 
 const CROSS_PLANE_BANKS = [0, 1, 0, 0, 1, 0, 1, 1];
@@ -246,6 +246,26 @@ export const ENGINE_VOICES = {
     revRiseSeconds: 0.14,
     shiftTimeScale: 1.14,
     whine: null,
+  },
+  m3gtr: {
+    make: 'BMW',
+    model: 'M3 GTR E46',
+    description: 'P60 V8 race exhaust with a rising gearbox whine',
+    banks: FLAT_PLANE_BANKS,
+    pulseStrength: [1.04, 0.97, 1.02, 0.96, 1.03, 0.97, 1.01, 0.96],
+    timing: [0, 0, -0.001, 0, 0, 0.001, 0, 0],
+    attack: 745,
+    resonances: [[8, 35, 0.62], [16, 54, 0.39], [24, 62, 0.36], [40, 88, 0.26], [56, 116, 0.13]],
+    bankDelay: 0.017,
+    crossover: 0.39,
+    rumble: 0.065,
+    idleCutoffHz: 730,
+    loadCutoffHz: 4_550,
+    level: 1.01,
+    redlineRpm: 8_500,
+    revRiseSeconds: 0.092,
+    shiftTimeScale: 0.74,
+    whine: { level: 0.11, rpmRatio: 0.19, coastLevel: 0.035 },
   },
 } satisfies Record<string, EngineVoice>;
 

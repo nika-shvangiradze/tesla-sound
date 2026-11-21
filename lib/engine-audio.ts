@@ -1,5 +1,5 @@
 import { IDLE_RPM } from './drive-model';
-import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, REFERENCE_RPM, supraBoostTarget, VOICE_IDS, type VoiceId } from './engine-wave';
+import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, REFERENCE_RPM, supraBoostTarget, VOICE_IDS, type EngineVoice, type VoiceId } from './engine-wave';
 
 export type AudioPath = 'standard' | 'worklet' | 'fallback';
 type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext };
@@ -156,7 +156,7 @@ export class EngineAudio {
     const now = this.context.currentTime;
     const dt = Math.min(0.12, Math.max(0, now - this.lastUpdate));
     this.lastUpdate = now;
-    const config = ENGINE_VOICES[voice];
+    const config: EngineVoice = ENGINE_VOICES[voice];
     const rpmChanged = Math.abs(rpm - this.rpm) > 2;
     const voiceChanged = this.voice !== voice;
     const loadChanged = Math.abs(load - this.load) > 0.008;
@@ -189,7 +189,11 @@ export class EngineAudio {
       this.exhaust.gain.setTargetAtTime(1.3 + config.rumble * 7 + overrun * 1.7, now, 0.040);
       this.intakeGain.gain.setTargetAtTime(0.34 * load ** 1.7 + 0.055 * overrun, now, 0.029);
       this.gate.gain.setTargetAtTime((0.25 + 0.68 * load + 0.08 * overrun) * config.level, now, 0.023);
-      if (voice !== 'supra') this.boostGain.gain.setTargetAtTime((config.whine?.level ?? 0) * load * load, now, 0.036);
+      if (voice !== 'supra') {
+        const whine = config.whine;
+        const whineLevel = whine ? whine.level * load ** 2 + (whine.coastLevel ?? 0) * overrun : 0;
+        this.boostGain.gain.setTargetAtTime(whineLevel, now, 0.036);
+      }
     }
     if (volume !== this.volume) {
       this.volume = volume;
