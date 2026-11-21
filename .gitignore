@@ -6,3 +6,7 @@
 /next-env.d.ts
 *.tsbuildinfo
 *.zip
+/.env
+/.env.*
+/.netlify/
+/voltroar-admin-setup.txt

@@ -1,6 +1,22 @@
 # VoltSound · V8 GPS Edition
 
-Tesla Model 3-ის ჰორიზონტალური ეკრანისთვის შექმნილი სინთეზირებული V8 და GPS დიაგნოსტიკა. აპი იყენებს Next.js App Router-ს, TypeScript-სა და Tailwind CSS-ს. სიჩქარეს ბრაუზერის Geolocation API-დან იღებს, ხმას ადგილზე ქმნის და სერვერზე მონაცემებს არ აგზავნის. აპს ანგარიში, გამოწერა ან ფასიანი API არ სჭირდება.
+Tesla Model 3-ის ჰორიზონტალური ეკრანისთვის შექმნილი სინთეზირებული ძრავის ხმები და GPS დიაგნოსტიკა. ანგარიშები და GPS Drive-ის პაკეტები ინახება Netlify Blobs-ში. სიჩქარის მონაცემები და სინთეზირებული ხმა მუშავდება ბრაუზერში.
+
+## GPS Drive-ის პაკეტები
+
+მომხმარებელი რეგისტრირდება ტელეფონითა და პაროლით. რეგისტრაციის შემდეგ შეუძლია Manual Mode-ისა და GPS Diagnostic-ის გამოყენება. ჩაკეტილ GPS Drive-ზე დაჭერისას ხედავს პაკეტებს: **1 თვე — ₾5**, **3 თვე — ₾12**, **6 თვე — ₾25**, **1 წელი — ₾50**.
+
+მომხმარებელი ირჩევს პაკეტს და წერს WhatsApp-ზე, ნომერზე **+995 551 099 081**. შეტყობინებაში ავტომატურად იწერება პაკეტი და ანგარიშის ნომერი. გადარიცხვის შემოწმების შემდეგ ადმინი **Admin → User accounts** განყოფილებაში პოულობს მომხმარებელს და აჭერს **Activate**. **Extend** მოქმედ ვადას უმატებს არჩეულ პერიოდს. **Revoke** წვდომას აუქმებს. ვადის ამოწურვისას GPS Drive ავტომატურად იკეტება.
+
+რეგისტრაციისას SMS არ იგზავნება. გადახდის აქტივაციამდე ადმინს შეუძლია WhatsApp-ის გამომგზავნის ნომერი ანგარიშის ნომერს შეადაროს.
+
+## ადმინისტრატორის პირველი შესვლა
+
+1. პროექტის მფლობელმა ლოკალურად გახსნას Git-ის მიერ გამოტოვებული `voltroar-admin-setup.txt` და დააკოპიროს კოდი.
+2. გახსნას საიტის `/setup/` გვერდი. დარეზერვებულ ნომერზე აირჩიოს ახალი, სულ მცირე 12-სიმბოლოიანი პაროლი და ჩასვას ერთჯერადი კოდი.
+3. შემდეგი შესვლები ჩვეულებრივი **Sign in** ფორმით ხდება. მხოლოდ ამ ანგარიშს ექნება **Admin** ბმული და სრული GPS წვდომა.
+
+რეპოზიტორიაში ინახება შემთხვევითი კოდის მხოლოდ SHA-256 საკონტროლო მნიშვნელობა. ახალი გარემოსთვის მისი გადაფარვა შესაძლებელია Functions-ის `VOLTROAR_ADMIN_SETUP_DIGEST` გარემოს მნიშვნელობით, რომელიც მფლობელის მიერ შექმნილი მინიმუმ 32 შემთხვევითი ბაიტისგან მიღებული კოდის SHA-256 ჰეში უნდა იყოს.
 
 ## V8-ის გამოცდა
 
@@ -20,16 +36,16 @@ Ferrari-ს V8 და Porsche-ს ბოქსერული ექვსცი
 
 ## ლოკალურად გაშვება
 
-1. ამოარქივე პროექტის ZIP და გახსენი საქაღალდე VS Code-ში.
+1. გახსენი რეპოზიტორია VS Code-ში.
 2. დააყენე Node.js 22 ან უფრო ახალი ვერსია.
 3. VS Code-ის ტერმინალში გაუშვი:
 
 ```sh
 npm ci
-npm run dev
+npx netlify-cli dev --no-open
 ```
 
-გახსენი [http://localhost:3000](http://localhost:3000). Windows PowerShell-ში, თუ `npm.ps1` დაბლოკილია, იმავე ბრძანებებში გამოიყენე `npm.cmd`.
+გახსენი Netlify Dev-ის მიერ ნაჩვენები მისამართი, ჩვეულებრივ [http://localhost:8888](http://localhost:8888). Netlify Dev ატარებს ფუნქციებს და ემულირებს საცავს. Windows PowerShell-ში შეგიძლია გამოიყენო `npm.cmd` და `npx.cmd`. [Netlify Dev](https://docs.netlify.com/api-and-cli-guides/cli-guides/manage-functions/)
 
 სტატიკური ვერსიისა და შემოწმებების გაშვება:
 
@@ -37,16 +53,13 @@ npm run dev
 npm test
 npm run typecheck
 npm run build
-npm run preview
 ```
 
-`npm run build` ქმნის `out/` საქაღალდეს. `npm run preview` მას ემსახურება [localhost:3000](http://localhost:3000)-ზე. ჯერ გააჩერე dev სერვერი, თუ ის იმავე პორტზე მუშაობს. `localhost` დეველოპერის კომპიუტერზე უსაფრთხო კონტექსტად ითვლება. მანქანიდან გასახსნელად გამოიყენე საჯარო HTTPS მისამართი. [Next.js-ის სტატიკური ექსპორტი](https://nextjs.org/docs/app/guides/static-exports)
+`npm run build` ქმნის `out/` საქაღალდეს. ანგარიშების სრული ტესტისთვის გამოიყენე Netlify Dev. მანქანიდან გასახსნელად გამოიყენე საჯარო HTTPS მისამართი.
 
-## განთავსება უფასო HTTPS ჰოსტინგზე
+## განთავსება Netlify-ზე
 
-1. გაუშვი `npm ci` და `npm run build`, ან ამოარქივე ცალკე მოწოდებული სტატიკური ZIP.
-2. შედი [Netlify Drop-ში](https://app.netlify.com/drop) და ატვირთე მზა საქაღალდე, რომლის უშუალო შიგთავსშია `index.html`, `audio-probe.js` და `_next/`. ლოკალური ბილდის შემთხვევაში ესაა `out/`.
-3. თუ პროექტს წვდომის შეზღუდვა აქვს, შეცვალე მისი ხილვადობა ისე, რომ Tesla-ს ბრაუზერმა გვერდი ავტორიზაციის გარეშე გახსნას. მანქანის ბრაუზერში გახსენი Netlify-ის მინიჭებული `https://….netlify.app` მისამართი. [ატვირთვის ინსტრუქცია](https://docs.netlify.com/start/quickstarts/netlify-drop-quickstart/) · [HTTPS](https://docs.netlify.com/manage/domains/secure-domains-with-https/https-ssl/)
+დააკავშირე GitHub-ის `main` ბრენჩი. `netlify.toml` განსაზღვრავს `npm run build` ბრძანებას, `out/` საქაღალდესა და `netlify/functions/` ფუნქციებს. ანგარიშები ინახება პროექტის საერთო Blobs საცავში და ხელმისაწვდომია შემდეგი განთავსების შემდეგაც. [Netlify Functions](https://docs.netlify.com/build/functions/configuration/) · [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/)
 
 აპს გამოყენების საკუთარი კვოტა არ აქვს. Netlify-ის უფასო გეგმაზე ჰოსტინგს თვიური კრედიტების ლიმიტი აქვს. [Netlify-ის გეგმები](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/)
 

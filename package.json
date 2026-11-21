@@ -11,9 +11,10 @@
     "build": "next build",
     "typecheck": "next typegen && tsc --noEmit",
     "preview": "serve out -l 3000",
-    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/gps.test.mts tests/photo-report.test.mts tests/engine.test.mts"
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/gps.test.mts tests/photo-report.test.mts tests/engine.test.mts tests/accounts.test.mts"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.1.9",
     "next": "16.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

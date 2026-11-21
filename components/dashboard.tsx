@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AccountMenu } from './account';
 import type { ReactNode } from 'react';
 import type { ApiState, Vector } from '../lib/diagnostic';
 import { useDiagnostic } from '../lib/use-diagnostic';
@@ -74,6 +75,7 @@ export default function Dashboard() {
         <div className="topbar-meta">
           <span>MODEL 3 DIAGNOSTICS</span><span className="version">V1.0</span>
           <Link className="engine-nav" href="/">V8 GPS Edition</Link>
+          <AccountMenu />
         </div>
       </header>
 

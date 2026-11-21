@@ -1,0 +1,203 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
+import { hasGpsAccess, SUPPORT_PHONE } from '../lib/account-plans';
+import type { AccountView } from '../lib/account-plans';
+
+const ENDPOINT = '/.netlify/functions/account';
+type SessionResult = { account: AccountView | null; serverTime: number };
+
+export async function accountRequest<T>(body?: Record<string, unknown>): Promise<T> {
+  const response = await fetch(ENDPOINT, {
+    cache: 'no-store',
+    credentials: 'same-origin',
+    ...(body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result) throw new Error(result?.error ?? 'Account service unavailable. Try again.');
+  return result as T;
+}
+
+type AccountContextValue = {
+  account: AccountView | null;
+  ready: boolean;
+  error: string;
+  gpsEnabled: boolean;
+  refresh: () => Promise<SessionResult>;
+  submit: (data: Record<string, unknown>) => Promise<SessionResult>;
+};
+const SessionContext = createContext<AccountContextValue | null>(null);
+
+export function useAccount() {
+  const context = useContext(SessionContext);
+  if (!context) throw new Error('Account provider is missing.');
+  return context;
+}
+
+export function AccountProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<SessionResult | null>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+  const [connected, setConnected] = useState(false);
+  const [clockOffset, setClockOffset] = useState(0);
+  const [now, setNow] = useState(0);
+  const generation = useRef(0);
+  const mutation = useRef<Promise<SessionResult> | null>(null);
+
+  const fetchSession = useCallback(async (body?: Record<string, unknown>) => {
+    const id = ++generation.current;
+    try {
+      const result = await accountRequest<SessionResult>(body);
+      if (id === generation.current) {
+        const received = Date.now();
+        setClockOffset(result.serverTime - received);
+        setNow(result.serverTime);
+        setSession(result);
+        setConnected(true);
+        setError('');
+      }
+      return result;
+    } catch (failure) {
+      if (!body && id === generation.current) {
+        setConnected(false);
+        setError(failure instanceof Error ? failure.message : 'Account service unavailable.');
+      }
+      throw failure;
+    } finally {
+      if (id === generation.current) setReady(true);
+    }
+  }, []);
+
+  const refresh = useCallback(() => mutation.current ?? fetchSession(), [fetchSession]);
+  const submit = useCallback((body: Record<string, unknown>) => {
+    if (mutation.current) return Promise.reject(new Error('An account request is already in progress.'));
+    const request = fetchSession(body).finally(() => { mutation.current = null; });
+    mutation.current = request;
+    return request;
+  }, [fetchSession]);
+  const account = session?.account ?? null;
+  useEffect(() => { void refresh().catch(() => {}); }, [refresh]);
+  useEffect(() => {
+    if (!account) return;
+    const refreshSession = () => {
+      if (!document.hidden) void refresh().catch(() => {});
+    };
+    const poll = window.setInterval(refreshSession, 30_000);
+    document.addEventListener('visibilitychange', refreshSession);
+    return () => {
+      window.clearInterval(poll);
+      document.removeEventListener('visibilitychange', refreshSession);
+    };
+  }, [account?.phone, refresh]);
+  useEffect(() => {
+    const expiry = account?.gpsUntil;
+    if (!expiry || expiry <= now) return;
+    const timer = window.setTimeout(() => setNow(Date.now() + clockOffset),
+      Math.min(2_147_000_000, Math.max(1, expiry - (Date.now() + clockOffset) + 1)));
+    return () => window.clearTimeout(timer);
+  }, [account?.gpsUntil, clockOffset, now]);
+
+  return (
+    <SessionContext.Provider value={{
+      account, ready, error, gpsEnabled: connected && hasGpsAccess(account, now),
+      refresh, submit,
+    }}>{children}</SessionContext.Provider>
+  );
+}
+
+export function AccountGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const { ready, account, error, refresh } = useAccount();
+  if (pathname?.replace(/\/$/, '') === '/setup') return children;
+  if (!ready) return <div className="account-shell"><p role="status">Checking session…</p></div>;
+  if (!account && error) return (
+    <div className="account-shell">
+      <p role="alert">{error}</p>
+      <button className="button" onClick={() => void refresh().catch(() => {})}>Try again</button>
+    </div>
+  );
+  return account ? children : <AccountForm />;
+}
+
+export function AccountForm({ setup = false }: { setup?: boolean }) {
+  const { submit } = useAccount();
+  const router = useRouter();
+  const [register, setRegister] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const confirmation = setup || register;
+  const title = setup ? 'Administrator setup' : register ? 'Create an account' : 'Sign in';
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setError('');
+    const password = form.get('password');
+    const confirmPassword = form.get('confirmPassword');
+    if (confirmation && password !== confirmPassword) {
+      setError('The passwords do not match.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await submit({
+        action: setup ? 'setup' : register ? 'register' : 'login',
+        phone: setup ? SUPPORT_PHONE : form.get('phone'), password, confirmPassword,
+        ...(setup ? { setupToken: form.get('setupToken') } : {}),
+      });
+      if (setup) router.replace('/');
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Could not complete this request.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="account-shell">
+      <div className="account-card panel">
+        <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></div>
+        <h1>{title}</h1>
+        {!setup && <div className="account-tabs" aria-label="Account action" role="group">
+          <button className="button" aria-pressed={!register} disabled={busy} onClick={() => { setRegister(false); setError(''); }}>Sign in</button>
+          <button className="button" aria-pressed={register} disabled={busy} onClick={() => { setRegister(true); setError(''); }}>Register</button>
+        </div>}
+        <form className="account-form" onSubmit={save}>
+          <label>Phone number<input name="phone" type="tel" autoComplete="tel" placeholder="+995 5XX XXX XXX"
+            required maxLength={35} {...(setup ? { value: SUPPORT_PHONE, readOnly: true } : {})} /></label>
+          <label>Password<input name="password" type="password" required maxLength={128}
+            minLength={setup ? 12 : register ? 8 : 1} autoComplete={confirmation ? 'new-password' : 'current-password'} /></label>
+          {confirmation && <label>Confirm password<input name="confirmPassword" type="password" required
+            maxLength={128} autoComplete="new-password" /></label>}
+          {setup && <label>Private setup code<input name="setupToken" type="password" required maxLength={128} autoComplete="off" /></label>}
+          {error && <p className="account-error" role="alert">{error}</p>}
+          <button className="button primary" disabled={busy}>{busy ? 'Please wait…' : title}</button>
+        </form>
+        {setup && <Link className="engine-nav" href="/">Back to sign in</Link>}
+      </div>
+    </main>
+  );
+}
+
+export function AccountMenu() {
+  const { account, submit } = useAccount();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  if (!account) return null;
+  return (
+    <div className="account-menu">
+      {account.role === 'admin' && <Link className="engine-nav" href="/admin/">Admin</Link>}
+      <button className="button" disabled={busy} onClick={async () => {
+        setBusy(true);
+        setError('');
+        try { await submit({ action: 'logout' }); }
+        catch (failure) { setError(failure instanceof Error ? failure.message : 'Sign out failed.'); }
+        finally { setBusy(false); }
+      }}>Sign out</button>
+      {error && <span className="account-error" role="alert">{error}</span>}
+    </div>
+  );
+}

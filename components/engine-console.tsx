@@ -1,15 +1,23 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { IDLE_RPM } from '../lib/drive-model';
 import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
 import { useEngine } from '../lib/use-engine';
 import InstrumentDials from './instrument-dials';
+import { AccountMenu, useAccount } from './account';
+import GpsPurchase from './gps-purchase';
+import { hasGpsAccess } from '../lib/account-plans';
 
 const gearNumbers = [1, 2, 3, 4, 5, 6];
 
 export default function EngineConsole() {
   const engine = useEngine();
+  const { account, gpsEnabled, refresh } = useAccount();
+  const [purchase, setPurchase] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [accessError, setAccessError] = useState('');
   const { frame, mode, path, state } = engine;
   const voice = ENGINE_VOICES[engine.voice];
   const { redlineRpm } = voice;
@@ -19,12 +27,33 @@ export default function EngineConsole() {
   const loadPercent = Math.round(frame.load * 100);
   const status = { off: 'Sound off', starting: 'Starting audio', playing: 'Sound on', paused: 'Audio paused', error: 'Audio error' }[state];
   const audioPath = path === 'worklet' ? 'AudioWorklet' : path === 'fallback' ? 'Web Audio fallback' : 'Web Audio';
+  useEffect(() => {
+    if (mode === 'gps' && !gpsEnabled) {
+      engine.stop();
+      engine.setMode('manual');
+    }
+  }, [mode, gpsEnabled]);
+
+  async function checkGpsAccess() {
+    setChecking(true);
+    setAccessError('');
+    try {
+      const result = await refresh();
+      if (hasGpsAccess(result.account, result.serverTime)) return true;
+      if (result.account) setPurchase(true);
+    } catch {
+      setAccessError('GPS Drive access could not be verified. Try again.');
+    } finally {
+      setChecking(false);
+    }
+    return false;
+  }
 
   return (
     <div className="shell engine-shell">
       <header className="topbar">
         <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></div>
-        <Link className="engine-nav" href="/diagnostic/">GPS Diagnostic</Link>
+        <div className="account-nav"><Link className="engine-nav" href="/diagnostic/">GPS Diagnostic</Link><AccountMenu /></div>
       </header>
 
       <main>
@@ -34,7 +63,10 @@ export default function EngineConsole() {
             <p>Synthesized engine sounds · six-speed virtual gearbox</p>
           </div>
           <div className="engine-actions">
-            <button className="button primary" onClick={() => void engine.start()} disabled={running || state === 'starting'}>
+            <button className="button primary" onClick={() => {
+              if (mode === 'manual' || gpsEnabled) void engine.start();
+              else void checkGpsAccess();
+            }} disabled={running || state === 'starting' || checking}>
               <span className="play-icon" aria-hidden="true" />
               {state === 'paused' ? 'Resume Sound' : 'Start Sound'}
             </button>
@@ -92,7 +124,9 @@ export default function EngineConsole() {
               </fieldset>
               <div className="mode-picker" aria-label="Engine mode" role="group">
                 <button className="button" aria-pressed={mode === 'manual'} onClick={() => engine.setMode('manual')}>Manual Mode</button>
-                <button className="button" aria-pressed={mode === 'gps'} onClick={() => engine.setMode('gps')}>GPS Drive</button>
+                <button className="button" aria-pressed={mode === 'gps'} disabled={checking} onClick={async () => {
+                  if (await checkGpsAccess()) engine.setMode('gps');
+                }}>GPS Drive {!gpsEnabled && <span className="gps-locked">Locked</span>}</button>
               </div>
               {mode === 'manual' ? (
                 <div className="mode-controls">
@@ -118,10 +152,12 @@ export default function EngineConsole() {
               </label>
               {active && <p className="audio-path" role="status">{audioPath}</p>}
               {engine.error && <p className="engine-error" role="alert">{engine.error}</p>}
+              {accessError && <p className="engine-error" role="alert">{accessError}</p>}
             </div>
           </section>
         </div>
       </main>
+      {purchase && account && <GpsPurchase phone={account.phone} onClose={() => setPurchase(false)} />}
       <footer>
         <span>Start sound while parked. While moving, only a passenger should operate the screen.</span>
       </footer>
