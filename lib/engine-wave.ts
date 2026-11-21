@@ -13,6 +13,8 @@ export type EngineVoice = {
   rumble: number;
   idleCutoffHz: number;
   loadCutoffHz: number;
+  intakeScale?: number;
+  overrunScale?: number;
   level: number;
   whine: { level: number; rpmRatio: number } | null;
 };
@@ -204,18 +206,20 @@ export const ENGINE_VOICES = {
     whine: null,
   },
   gaz24: {
-    description: 'Carbureted inline-four with a soft idle and a rough exhaust note under load',
+    description: 'Muted carbureted four-cylinder with a gentle, pulsing exhaust',
     banks: [0, 0, 0, 0],
-    pulseStrength: [1.12, 0.89, 1.04, 0.95],
-    timing: [0, 0.004, -0.003, 0.002],
-    attack: 300,
-    resonances: [[4, 23, 0.70], [8, 42, 0.36], [16, 59, 0.22], [28, 88, 0.17], [42, 108, 0.09]],
-    bankDelay: 0.013,
-    crossover: 0.86,
-    rumble: 0.15,
-    idleCutoffHz: 370,
-    loadCutoffHz: 2_650,
-    level: 1.04,
+    pulseStrength: [1.10, 0.91, 1.05, 0.94],
+    timing: [0, 0.002, -0.001, 0.003],
+    attack: 145,
+    resonances: [[4, 25, 0.73], [8, 48, 0.27], [12, 66, 0.12], [25, 94, 0.055]],
+    bankDelay: 0.009,
+    crossover: 0.91,
+    rumble: 0.09,
+    idleCutoffHz: 280,
+    loadCutoffHz: 950,
+    intakeScale: 0.22,
+    overrunScale: 0.30,
+    level: 0.94,
     whine: null,
   },
 } satisfies Record<string, EngineVoice>;

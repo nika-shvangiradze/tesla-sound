@@ -42,7 +42,7 @@ export function useEngine() {
     sim.last = now;
     const input = controls.current;
     const vehicle = VEHICLES[input.voice];
-    const { idleRpm, limiterRpm, responseSeconds } = vehicle.engine;
+    const { idleRpm, limiterRpm, responseSeconds, revBlipRpm = limiterRpm - 260 } = vehicle.engine;
     const changed = input.mode !== sim.mode || input.voice !== sim.voice;
     if (changed) sim.transmission = null;
     sim.mode = input.mode;
@@ -53,7 +53,7 @@ export function useEngine() {
     const drive = inDrive ? driveTarget(reading.tracking, sim.transmission, now, vehicle) : null;
     sim.transmission = drive?.fresh ? drive : null;
     const revving = !inDrive && now < input.revUntil;
-    const target = drive?.rpm ?? (revving ? Math.max(input.manualRpm, limiterRpm - 260) : input.manualRpm);
+    const target = drive?.rpm ?? (revving ? Math.max(input.manualRpm, revBlipRpm) : input.manualRpm);
     const delta = target - sim.rpm;
     const response = drive ? drive.shift ? 0.032 : drive.fresh ? 0.045 : 0.16
       : delta >= 0 ? responseSeconds : responseSeconds * 1.45;

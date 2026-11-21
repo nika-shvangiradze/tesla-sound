@@ -19,7 +19,7 @@ export type VehicleProfile = {
   make: string;
   model: string;
   variant: string;
-  engine: { idleRpm: number; redlineRpm: number; limiterRpm: number; responseSeconds: number };
+  engine: { idleRpm: number; redlineRpm: number; limiterRpm: number; responseSeconds: number; revBlipRpm?: number };
   gearbox: {
     type: TransmissionType;
     name: string;
@@ -216,7 +216,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
   },
   gaz24: {
     make: 'GAZ', model: 'Nugzara 24', variant: 'GAZ-24 Volga · ZMZ-24D',
-    engine: { idleRpm: 650, redlineRpm: 4_700, limiterRpm: 5_000, responseSeconds: 0.22 },
+    engine: { idleRpm: 650, redlineRpm: 4_700, limiterRpm: 5_000, responseSeconds: 0.30, revBlipRpm: 3_000 },
     gearbox: {
       type: 'manual', name: 'GAZ', ratios: [3.5, 2.26, 1.45, 1],
       reverseRatios: null, finalDrive: 4.10, circumferenceM: 2.03,

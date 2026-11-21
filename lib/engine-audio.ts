@@ -186,10 +186,11 @@ export class EngineAudio {
     if (voiceChanged || loadChanged || overrunChanged) {
       this.load = load;
       this.overrun = overrun;
-      this.tone.frequency.setTargetAtTime(config.idleCutoffHz + config.loadCutoffHz * load ** 0.84 + overrun * 220, now, 0.034);
-      this.exhaust.gain.setTargetAtTime(1.3 + config.rumble * 7 + overrun * 1.7, now, 0.040);
-      this.intakeGain.gain.setTargetAtTime(0.34 * load ** 1.7 + 0.055 * overrun, now, 0.029);
-      this.gate.gain.setTargetAtTime((0.25 + 0.68 * load + 0.08 * overrun) * config.level, now, 0.023);
+      const coast = overrun * (config.overrunScale ?? 1);
+      this.tone.frequency.setTargetAtTime(config.idleCutoffHz + config.loadCutoffHz * load ** 0.84 + coast * 220, now, 0.034);
+      this.exhaust.gain.setTargetAtTime(1.3 + config.rumble * 7 + coast * 1.7, now, 0.040);
+      this.intakeGain.gain.setTargetAtTime((0.34 * load ** 1.7 + 0.055 * coast) * (config.intakeScale ?? 1), now, 0.029);
+      this.gate.gain.setTargetAtTime((0.25 + 0.68 * load + 0.08 * coast) * config.level, now, 0.023);
       if (voice !== 'supra') {
         this.boostGain.gain.setTargetAtTime((config.whine?.level ?? 0) * load ** 2, now, 0.036);
       }
