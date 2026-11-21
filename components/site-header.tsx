@@ -5,7 +5,7 @@ import { AccountMenu, useAccount } from './account';
 import { LanguageSwitch, useLanguage } from './language';
 
 function Wordmark() {
-  return <Link className="wordmark" href="/"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></Link>;
+  return <Link className="wordmark" href="/"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Roar</span></Link>;
 }
 
 export default function SiteHeader({ page }: { page: 'engine' | 'diagnostic' | 'admin' }) {

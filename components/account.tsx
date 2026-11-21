@@ -166,7 +166,7 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
     <main className="account-shell">
       <div className="account-card panel">
         <div className="account-card-header">
-          <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></div>
+          <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Roar</span></div>
           <LanguageSwitch />
         </div>
         <h1>{t(title)}</h1>
