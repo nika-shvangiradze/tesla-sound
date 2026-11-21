@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import type { CSSProperties } from 'react';
 import { ENGINE_VOICES, type VoiceId } from '../lib/engine-wave';
+import { useLanguage } from './language';
 
 const START = -133;
 const SWEEP = 266;
@@ -53,15 +54,16 @@ function Dial({ kind, value, max, redline }: {
   max: number;
   redline?: number;
 }) {
+  const { t } = useLanguage();
   const tach = kind === 'rpm';
-  const units = tach ? 'RPM' : 'km/h';
-  const title = tach ? 'Engine RPM' : 'GPS speed';
+  const units = tach ? 'RPM' : t('km/h');
+  const title = t(tach ? 'Engine RPM' : 'GPS speed');
   const reading = value === null ? '—' : tach ? value.toLocaleString('en-US') : value.toFixed(1);
   const needleValue = value === null ? null : Math.min(max, Math.max(0, value));
   const arc = { '--dial-red-start': `${redline ? redline / max * SWEEP : SWEEP}deg` } as CSSProperties;
   return (
     <div className={`dial dial-${kind}`} role={value === null ? 'img' : 'meter'}
-      aria-label={value === null ? `${title} unavailable` : title}
+      aria-label={value === null ? t('{title} unavailable', { title }) : title}
       aria-valuemin={value === null ? undefined : 0}
       aria-valuemax={value === null ? undefined : max}
       aria-valuenow={needleValue ?? undefined}

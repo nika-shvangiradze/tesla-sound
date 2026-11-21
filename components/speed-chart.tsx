@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import { STALE_MS, type Fix } from '../lib/gps';
+import { useLanguage } from './language';
 
-function draw(canvas: HTMLCanvasElement, fixes: Fix[], elapsed: number) {
+function draw(canvas: HTMLCanvasElement, fixes: Fix[], elapsed: number, seconds: string) {
   const { width, height } = canvas.getBoundingClientRect();
   if (!width || !height) return;
   const scale = window.devicePixelRatio || 1;
@@ -44,7 +45,7 @@ function draw(canvas: HTMLCanvasElement, fixes: Fix[], elapsed: number) {
     ctx.moveTo(at, top);
     ctx.lineTo(at, bottom);
     ctx.stroke();
-    const label = `${Math.floor(time / 1000)}s`;
+    const label = `${Math.floor(time / 1000)} ${seconds}`;
     const halfLabel = ctx.measureText(label).width / 2;
     ctx.fillText(label, Math.min(at, width - halfLabel), bottom + 16);
   }
@@ -74,17 +75,19 @@ function draw(canvas: HTMLCanvasElement, fixes: Fix[], elapsed: number) {
 }
 
 export default function SpeedChart({ fixes, elapsed }: { fixes: Fix[]; elapsed: number }) {
+  const { t } = useLanguage();
+  const seconds = t('s');
   const ref = useRef<HTMLCanvasElement>(null);
-  const current = useRef({ fixes, elapsed });
+  const current = useRef({ fixes, elapsed, seconds });
   useEffect(() => {
-    current.current = { fixes, elapsed };
-    if (ref.current) draw(ref.current, fixes, elapsed);
-  }, [fixes, elapsed]);
+    current.current = { fixes, elapsed, seconds };
+    if (ref.current) draw(ref.current, fixes, elapsed, seconds);
+  }, [fixes, elapsed, seconds]);
 
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const resize = () => draw(canvas, current.current.fixes, current.current.elapsed);
+    const resize = () => draw(canvas, current.current.fixes, current.current.elapsed, current.current.seconds);
     if (typeof ResizeObserver === 'function') {
       const observer = new ResizeObserver(resize);
       observer.observe(canvas);
@@ -96,9 +99,9 @@ export default function SpeedChart({ fixes, elapsed }: { fixes: Fix[]; elapsed: 
 
   return (
     <div className="chart-frame">
-      <canvas ref={ref} className="speed-chart" aria-label="GPS speed in km/h over elapsed test time" role="img" />
+      <canvas ref={ref} className="speed-chart" aria-label={t('GPS speed in km/h over elapsed test time')} role="img" />
       {!fixes.some((fix) => fix.speedKmh !== null) && (
-        <div className="chart-empty">Waiting for speed samples</div>
+        <div className="chart-empty">{t('Waiting for speed samples')}</div>
       )}
     </div>
   );

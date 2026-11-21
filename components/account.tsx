@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { FormEvent, ReactNode } from 'react';
 import { hasGpsAccess, LOCAL_PHONE_PATTERN, SIGN_IN_PHONE_PATTERN, SUPPORT_PHONE } from '../lib/account-plans';
 import type { AccountView } from '../lib/account-plans';
+import { LanguageSwitch, useLanguage } from './language';
 
 const ENDPOINT = '/.netlify/functions/account';
 type SessionResult = { account: AccountView | null; serverTime: number };
@@ -110,13 +111,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
 export function AccountGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { t, message } = useLanguage();
   const { ready, account, error, refresh } = useAccount();
   if (pathname?.replace(/\/$/, '') === '/setup') return children;
-  if (!ready) return <div className="account-shell"><p role="status">Checking session…</p></div>;
+  if (!ready) return <div className="account-shell"><p role="status">{t('Checking session…')}</p></div>;
   if (!account && error) return (
     <div className="account-shell">
-      <p role="alert">{error}</p>
-      <button className="button" onClick={() => void refresh().catch(() => {})}>Try again</button>
+      <LanguageSwitch />
+      <p role="alert">{message(error)}</p>
+      <button className="button" onClick={() => void refresh().catch(() => {})}>{t('Try again')}</button>
     </div>
   );
   return account ? children : <AccountForm />;
@@ -124,6 +127,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
 
 export function AccountForm({ setup = false }: { setup?: boolean }) {
   const { submit } = useAccount();
+  const { t, message } = useLanguage();
   const router = useRouter();
   const [register, setRegister] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -160,26 +164,29 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
   return (
     <main className="account-shell">
       <div className="account-card panel">
-        <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></div>
-        <h1>{title}</h1>
-        {!setup && <div className="account-tabs" aria-label="Account action" role="group">
-          <button className="button" aria-pressed={!register} disabled={busy} onClick={() => { setRegister(false); setError(''); }}>Sign in</button>
-          <button className="button" aria-pressed={register} disabled={busy} onClick={() => { setRegister(true); setError(''); }}>Register</button>
+        <div className="account-card-header">
+          <div className="wordmark"><span className="brand-mark" aria-hidden="true"><i /></span>Volt<span>Sound</span></div>
+          <LanguageSwitch />
+        </div>
+        <h1>{t(title)}</h1>
+        {!setup && <div className="account-tabs" aria-label={t('Account action')} role="group">
+          <button className="button" aria-pressed={!register} disabled={busy} onClick={() => { setRegister(false); setError(''); }}>{t('Sign in')}</button>
+          <button className="button" aria-pressed={register} disabled={busy} onClick={() => { setRegister(true); setError(''); }}>{t('Register')}</button>
         </div>}
         <form className="account-form" onSubmit={save}>
-          <label>Phone number<input name="phone" type="tel" inputMode="tel" autoComplete="username"
+          <label>{t('Phone number')}<input name="phone" type="tel" inputMode="tel" autoComplete="username"
             placeholder="555555555" aria-describedby="phone-format" pattern={confirmation ? LOCAL_PHONE_PATTERN : SIGN_IN_PHONE_PATTERN}
             required value={phone} readOnly={setup} onChange={(event) => setPhone(event.target.value.replace(/\s/g, ''))} />
-            <span id="phone-format">Enter 9 digits without spaces, e.g. 555555555.</span></label>
-          <label>Password<input name="password" type="password" required maxLength={128}
+            <span id="phone-format">{t('Enter 9 digits without spaces, e.g. 555555555')}</span></label>
+          <label>{t('Password')}<input name="password" type="password" required maxLength={128}
             minLength={setup ? 12 : register ? 8 : 1} autoComplete={confirmation ? 'new-password' : 'current-password'} /></label>
-          {confirmation && <label>Confirm password<input name="confirmPassword" type="password" required
+          {confirmation && <label>{t('Confirm password')}<input name="confirmPassword" type="password" required
             maxLength={128} autoComplete="new-password" /></label>}
-          {setup && <label>Private setup code<input name="setupToken" type="password" required maxLength={128} autoComplete="off" /></label>}
-          {error && <p className="account-error" role="alert">{error}</p>}
-          <button className="button primary" disabled={busy}>{busy ? 'Please wait…' : title}</button>
+          {setup && <label>{t('Private setup code')}<input name="setupToken" type="password" required maxLength={128} autoComplete="off" /></label>}
+          {error && <p className="account-error" role="alert">{message(error)}</p>}
+          <button className="button primary" disabled={busy}>{t(busy ? 'Please wait…' : title)}</button>
         </form>
-        {setup && <Link className="engine-nav" href="/">Back to sign in</Link>}
+        {setup && <Link className="engine-nav" href="/">{t('Back to sign in')}</Link>}
       </div>
     </main>
   );
@@ -187,6 +194,7 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
 
 function PasswordSettings({ minLength }: { minLength: number }) {
   const { submit } = useAccount();
+  const { t, message } = useLanguage();
   const dialog = useRef<HTMLDialogElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
@@ -223,37 +231,38 @@ function PasswordSettings({ minLength }: { minLength: number }) {
         setError('');
         setChanged(false);
         dialog.current?.showModal();
-      }}>Change password</button>
-      <dialog ref={dialog} className="password-dialog panel" aria-label="Change password"
+      }}>{t('Change password')}</button>
+      <dialog ref={dialog} className="password-dialog panel" aria-label={t('Change password')}
         onClose={() => form.current?.reset()}
         onCancel={(event) => { if (busy) event.preventDefault(); }}>
         <div className="panel-heading">
-          <h2>Change password</h2>
-          <button className="button" type="button" disabled={busy} onClick={() => dialog.current?.close()}>Close</button>
+          <h2>{t('Change password')}</h2>
+          <button className="button" type="button" disabled={busy} onClick={() => dialog.current?.close()}>{t('Close')}</button>
         </div>
         <div className="password-body">
           <form className="account-form" ref={form} onSubmit={save} hidden={changed}>
-            <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" required maxLength={128} /></label>
-            <label>New password<input name="password" type="password" autoComplete="new-password" required minLength={minLength} maxLength={128} /></label>
-            <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" required maxLength={128} /></label>
-            {error && <p className="account-error" role="alert">{error}</p>}
-            <button className="button primary" disabled={busy}>{busy ? 'Saving…' : 'Save password'}</button>
+            <label>{t('Current password')}<input name="currentPassword" type="password" autoComplete="current-password" required maxLength={128} /></label>
+            <label>{t('New password')}<input name="password" type="password" autoComplete="new-password" required minLength={minLength} maxLength={128} /></label>
+            <label>{t('Confirm new password')}<input name="confirmPassword" type="password" autoComplete="new-password" required maxLength={128} /></label>
+            {error && <p className="account-error" role="alert">{message(error)}</p>}
+            <button className="button primary" disabled={busy}>{t(busy ? 'Saving…' : 'Save password')}</button>
           </form>
-          {changed && <p role="status">Password changed. Your other sessions have been signed out.</p>}
+          {changed && <p role="status">{t('Password changed. Your other sessions have been signed out')}</p>}
         </div>
       </dialog>
     </>
   );
 }
 
-export function AccountMenu() {
+export function AccountMenu({ showAdmin }: { showAdmin: boolean }) {
   const { account, submit } = useAccount();
+  const { t, message } = useLanguage();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   if (!account) return null;
   return (
-    <div className="account-menu">
-      {account.role === 'admin' && <Link className="engine-nav" href="/admin/">Admin</Link>}
+    <>
+      {showAdmin && account.role === 'admin' && <Link className="button site-section" href="/admin/">{t('Admin')}</Link>}
       <PasswordSettings minLength={account.role === 'admin' ? 12 : 8} />
       <button className="button" disabled={busy} onClick={async () => {
         setBusy(true);
@@ -261,8 +270,8 @@ export function AccountMenu() {
         try { await submit({ action: 'logout' }); }
         catch (failure) { setError(failure instanceof Error ? failure.message : 'Sign out failed.'); }
         finally { setBusy(false); }
-      }}>Sign out</button>
-      {error && <span className="account-error" role="alert">{error}</span>}
-    </div>
+      }}>{t('Sign out')}</button>
+      {error && <span className="account-error" role="alert">{message(error)}</span>}
+    </>
   );
 }
