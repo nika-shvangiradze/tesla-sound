@@ -29,6 +29,7 @@ const georgian: Readonly<Record<string, string>> = {
   'Close': 'დახურვა',
   'Cancel': 'გაუქმება',
   'Main navigation': 'მთავარი ნავიგაცია',
+  'Suggest an idea on Discord': 'გაგვიზიარე იდეა Discord-ზე',
   'Admin panel': 'ადმინის პანელი',
   'Manage user accounts and GPS Drive access': 'მომხმარებლებისა და GPS რეჟიმის მართვა',
   'User accounts': 'მომხმარებლები',

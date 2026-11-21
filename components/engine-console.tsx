@@ -9,6 +9,7 @@ import { useAccount } from './account';
 import SiteHeader from './site-header';
 import { useLanguage } from './language';
 import GpsPurchase from './gps-purchase';
+import DiscordLink from './discord-link';
 import { hasGpsAccess } from '../lib/account-plans';
 
 const gearNumbers = [1, 2, 3, 4, 5, 6];
@@ -159,6 +160,7 @@ export default function EngineConsole() {
       {purchase && account && <GpsPurchase phone={account.phone} onClose={() => setPurchase(false)} />}
       <footer>
         <span>{t('Start sound while parked. While moving, only a passenger should operate the screen')}</span>
+        <DiscordLink />
       </footer>
     </div>
   );

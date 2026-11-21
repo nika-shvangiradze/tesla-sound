@@ -7,6 +7,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { hasGpsAccess, LOCAL_PHONE_PATTERN, SIGN_IN_PHONE_PATTERN, SUPPORT_PHONE } from '../lib/account-plans';
 import type { AccountView } from '../lib/account-plans';
 import { LanguageSwitch, useLanguage } from './language';
+import DiscordLink from './discord-link';
 
 const ENDPOINT = '/.netlify/functions/account';
 type SessionResult = { account: AccountView | null; serverTime: number };
@@ -186,7 +187,7 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
           {error && <p className="account-error" role="alert">{message(error)}</p>}
           <button className="button primary" disabled={busy}>{t(busy ? 'Please wait…' : title)}</button>
         </form>
-        {setup && <Link className="engine-nav" href="/">{t('Back to sign in')}</Link>}
+        {setup ? <Link className="engine-nav" href="/">{t('Back to sign in')}</Link> : <DiscordLink />}
       </div>
     </main>
   );
