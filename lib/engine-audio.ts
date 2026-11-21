@@ -191,9 +191,7 @@ export class EngineAudio {
       this.intakeGain.gain.setTargetAtTime(0.34 * load ** 1.7 + 0.055 * overrun, now, 0.029);
       this.gate.gain.setTargetAtTime((0.25 + 0.68 * load + 0.08 * overrun) * config.level, now, 0.023);
       if (voice !== 'supra') {
-        const whine = config.whine;
-        const whineLevel = whine ? whine.level * load ** 2 + (whine.coastLevel ?? 0) * overrun : 0;
-        this.boostGain.gain.setTargetAtTime(whineLevel, now, 0.036);
+        this.boostGain.gain.setTargetAtTime((config.whine?.level ?? 0) * load ** 2, now, 0.036);
       }
     }
     if (volume !== this.volume) {

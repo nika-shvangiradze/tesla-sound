@@ -1,10 +1,10 @@
 'use client';
 
 import { memo } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import type { VoiceId } from '../lib/engine-wave';
 import { displaySpeed, gaugeAngle, gaugeTicks } from '../lib/instrument-scale';
-import { VEHICLES, type GaugeScale, type VehicleProfile } from '../lib/vehicle-profiles';
+import { VEHICLES, type GaugeScale } from '../lib/vehicle-profiles';
 import { useLanguage } from './language';
 
 const DialScale = memo(function DialScale({ scale, redline }: { scale: GaugeScale; redline?: number }) {
@@ -67,30 +67,6 @@ function Dial({ kind, value, scale, units, redline }: {
   );
 }
 
-function RaceCluster({ rpm, vehicle, speedometer }: { rpm: number; vehicle: VehicleProfile; speedometer: ReactNode }) {
-  const { t } = useLanguage();
-  const scale = vehicle.cluster.tach;
-  const fraction = (value: number) => (value - scale.min) / (scale.max - scale.min) * 100;
-  return (
-    <div className="race-cluster">
-      <div role="meter" aria-label={t('Simulated RPM')} aria-valuemin={scale.min} aria-valuemax={scale.max} aria-valuenow={rpm}>
-        <div className="race-tach-scale" aria-hidden="true">
-          {gaugeTicks(scale).filter((tick) => tick.major).map(({ value }) => (
-            <span key={value} style={{ left: `${fraction(value)}%` }}>{value / 1_000}</span>
-          ))}
-        </div>
-        <div className="race-tach-track" aria-hidden="true" style={{ '--race-red': `${fraction(vehicle.engine.redlineRpm)}%` } as CSSProperties}>
-          <i style={{ width: `${fraction(rpm)}%` }} />
-        </div>
-      </div>
-      <div className="race-readouts">
-        {speedometer}
-        <Readout value={rpm} units="RPM" tach />
-      </div>
-    </div>
-  );
-}
-
 export default function InstrumentDials({ voice, rpm, speed }: { voice: VoiceId; rpm: number; speed: number | null }) {
   const { t } = useLanguage();
   const vehicle = VEHICLES[voice];
@@ -105,12 +81,10 @@ export default function InstrumentDials({ voice, rpm, speed }: { voice: VoiceId;
   return (
     <div className="instrument-cluster" data-voice={voice} data-layout={cluster.layout} data-needle={cluster.needle}>
       <p className="cluster-model"><span>{make}</span> {model}<small>{t(variant)}</small></p>
-      {cluster.layout === 'race'
-        ? <RaceCluster rpm={rpm} vehicle={vehicle} speedometer={speedometer} />
-        : <div className="instrument-dials">
-          {tachFirst ? tachometer : speedometer}
-          {tachFirst ? speedometer : tachometer}
-        </div>}
+      <div className="instrument-dials">
+        {tachFirst ? tachometer : speedometer}
+        {tachFirst ? speedometer : tachometer}
+      </div>
     </div>
   );
 }

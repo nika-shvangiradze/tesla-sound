@@ -7,7 +7,7 @@ import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, makeEngineWave, supraBoostT
 
 test('all 12 variants have bounded forward gearing and can reach their highest gear', () => {
   const counts = { shelby: 4, c63: 7, ferrari: 7, porsche: 7, hellcat: 8,
-    countach: 5, huracan: 7, demon: 8, subaru: 6, m5: 7, supra: 6, m3gtr: 6 } as const;
+    countach: 5, huracan: 7, demon: 8, subaru: 6, m5: 7, supra: 6, m3: 6 } as const;
   assert.deepEqual(Object.keys(VEHICLES).sort(), [...VOICE_IDS].sort());
   for (const id of VOICE_IDS) {
     const { gearbox, engine, cluster } = VEHICLES[id];
@@ -124,6 +124,17 @@ test('the four-cycle engine loop adds variation without changing the cycle lengt
   assert.ok(wave.every((sample) => Number.isFinite(sample) && Math.abs(sample) < 1));
   assert.notDeepEqual(wave.slice(0, frames), wave.slice(frames, frames * 2));
   assert.ok(Math.abs(wave[0] - wave[wave.length - 1]) < 0.05);
+});
+
+test('the road-going E46 M3 uses an S54 six-cylinder waveform and the European manual gearbox', () => {
+  const m3 = VEHICLES.m3;
+  assert.equal(ENGINE_VOICES.m3.banks.length, 6);
+  assert.equal(ENGINE_VOICES.m3.whine, null);
+  assert.notDeepEqual(makeEngineWave(3600, 'm3'), makeEngineWave(3600, 'porsche'));
+  assert.notDeepEqual(makeEngineWave(3600, 'm3'), makeEngineWave(3600, 'supra'));
+  assert.deepEqual(m3.gearbox.ratios, [4.227, 2.528, 1.669, 1.226, 1, 0.828]);
+  assert.equal(m3.gearbox.finalDrive, 3.62);
+  assert.equal(m3.engine.limiterRpm, 8_000);
 });
 
 test('each engine voice keeps distinct stereo banks, bounded samples, and a smooth loop seam', () => {

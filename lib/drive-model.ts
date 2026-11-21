@@ -12,7 +12,6 @@ const SHIFT_MAPS: Record<TransmissionType, {
   automatic: { upBase: 0.24, upLoad: 0.65, downBase: 0.17, upMs: 160, downMs: 200, cut: 0.45, revMatchRpm: 130, launchKmh: 20, neutralAtRest: false },
   'dual-clutch': { upBase: 0.32, upLoad: 0.60, downBase: 0.18, upMs: 95, downMs: 145, cut: 0.58, revMatchRpm: 200, launchKmh: 13, neutralAtRest: false },
   'automated-manual': { upBase: 0.36, upLoad: 0.54, downBase: 0.20, upMs: 175, downMs: 215, cut: 0.17, revMatchRpm: 300, launchKmh: 14, neutralAtRest: false },
-  'race-manual': { upBase: 0.43, upLoad: 0.50, downBase: 0.24, upMs: 115, downMs: 165, cut: 0.10, revMatchRpm: 360, launchKmh: 24, neutralAtRest: true },
 };
 
 export function clamp(value: number, min: number, max: number) {

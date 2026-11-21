@@ -17,7 +17,6 @@ const gearboxTypes: Record<TransmissionType, string> = {
   automatic: 'automatic',
   'dual-clutch': 'dual-clutch',
   'automated-manual': 'automated manual',
-  'race-manual': 'race manual',
 };
 
 export default function EngineConsole() {

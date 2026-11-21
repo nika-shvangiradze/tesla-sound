@@ -1,7 +1,7 @@
 import type { VoiceId } from './engine-wave';
 
 export type SpeedUnit = 'km/h' | 'mph';
-export type TransmissionType = 'manual' | 'automatic' | 'dual-clutch' | 'automated-manual' | 'race-manual';
+export type TransmissionType = 'manual' | 'automatic' | 'dual-clutch' | 'automated-manual';
 export type ScalePoint = readonly [value: number, angle: number];
 
 export type GaugeScale = {
@@ -31,7 +31,7 @@ export type VehicleProfile = {
   };
   topSpeed: { kmh: number; kind: 'stated' | 'limited' | 'lower-bound' } | null;
   cluster: {
-    layout: 'speed-first' | 'tach-first' | 'track' | 'race';
+    layout: 'speed-first' | 'tach-first' | 'track';
     speed: { unit: SpeedUnit; scale: GaugeScale | null };
     tach: GaugeScale;
     needle: 'fine' | 'classic' | 'blade';
@@ -201,17 +201,17 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
       tach: scale(8_000, 1_000, 200, -131, 262), needle: 'fine',
     },
   },
-  m3gtr: {
-    make: 'BMW', model: 'M3 GTR E46', variant: '2001 ALMS Race Car',
-    engine: { idleRpm: 950, redlineRpm: 8_000, limiterRpm: 8_500, responseSeconds: 0.092 },
+  m3: {
+    make: 'BMW', model: 'M3 E46 S54', variant: '2001 Coupé · EU',
+    engine: { idleRpm: 800, redlineRpm: 8_000, limiterRpm: 8_000, responseSeconds: 0.115 },
     gearbox: {
-      type: 'race-manual', name: 'Hewland', ratios: [2.50, 2.07, 1.69, 1.38, 1.18, 1.04],
-      reverseRatios: null, finalDrive: 3.85, circumferenceM: Math.PI * 0.65, estimatedGearing: true,
+      type: 'manual', name: 'Getrag 420G', ratios: [4.227, 2.528, 1.669, 1.226, 1, 0.828],
+      reverseRatios: [3.746], finalDrive: 3.62, circumferenceM: tyre(255, 40, 18),
     },
-    topSpeed: { kmh: 260, kind: 'stated' },
+    topSpeed: { kmh: 250, kind: 'limited' },
     cluster: {
-      layout: 'race', speed: { unit: 'km/h', scale: null },
-      tach: scale(9_000, 1_000, 250, -109, 218), needle: 'blade',
+      layout: 'speed-first', speed: { unit: 'km/h', scale: scale(300, 30, 10, -132, 264) },
+      tach: scale(9_000, 1_000, 200, -132, 264), needle: 'fine',
     },
   },
 };

@@ -14,12 +14,12 @@ export type EngineVoice = {
   idleCutoffHz: number;
   loadCutoffHz: number;
   level: number;
-  whine: { level: number; rpmRatio: number; coastLevel?: number } | null;
+  whine: { level: number; rpmRatio: number } | null;
 };
 
 const CROSS_PLANE_BANKS = [0, 1, 0, 0, 1, 0, 1, 1];
 const FLAT_PLANE_BANKS = [0, 1, 0, 1, 0, 1, 0, 1];
-const FLAT_SIX_BANKS = [0, 1, 0, 1, 0, 1];
+const ALTERNATING_SIX_BANKS = [0, 1, 0, 1, 0, 1];
 
 export const ENGINE_VOICES = {
   shelby: {
@@ -69,7 +69,7 @@ export const ENGINE_VOICES = {
   },
   porsche: {
     description: 'Metallic flat-six exhaust note',
-    banks: FLAT_SIX_BANKS,
+    banks: ALTERNATING_SIX_BANKS,
     pulseStrength: [1, 0.96, 1.04, 0.95, 1.02, 0.98],
     timing: [0, 0.001, 0, 0.001, 0, 0],
     attack: 620,
@@ -174,7 +174,7 @@ export const ENGINE_VOICES = {
   },
   supra: {
     description: 'A80 inline-six, progressive twin-turbo spool and lift-off hiss',
-    banks: FLAT_SIX_BANKS,
+    banks: ALTERNATING_SIX_BANKS,
     pulseStrength: [1.04, 1.02, 0.95, 1.03, 0.96, 1],
     timing: [0, 0.001, 0, 0.002, 0, 0.001],
     attack: 405,
@@ -187,20 +187,21 @@ export const ENGINE_VOICES = {
     level: 1.00,
     whine: null,
   },
-  m3gtr: {
-    description: 'P60 V8 race exhaust with a rising gearbox whine',
-    banks: FLAT_PLANE_BANKS,
-    pulseStrength: [1.04, 0.97, 1.02, 0.96, 1.03, 0.97, 1.01, 0.96],
-    timing: [0, 0, -0.001, 0, 0, 0.001, 0, 0],
-    attack: 745,
-    resonances: [[8, 35, 0.62], [16, 54, 0.39], [24, 62, 0.36], [40, 88, 0.26], [56, 116, 0.13]],
-    bankDelay: 0.017,
-    crossover: 0.39,
-    rumble: 0.065,
-    idleCutoffHz: 730,
-    loadCutoffHz: 4_550,
-    level: 1.01,
-    whine: { level: 0.11, rpmRatio: 0.19, coastLevel: 0.035 },
+  m3: {
+    description: 'S54 inline-six intake growl and metallic exhaust rasp',
+    // Firing order 1-5-3-6-2-4 alternates the front and rear cylinder groups.
+    banks: ALTERNATING_SIX_BANKS,
+    pulseStrength: [1.05, 0.96, 1.02, 0.99, 1.01, 0.98],
+    timing: [0, 0, 0, 0, 0, 0],
+    attack: 700,
+    resonances: [[6, 30, 0.64], [12, 46, 0.34], [24, 74, 0.26], [36, 80, 0.34], [48, 108, 0.22], [66, 133, 0.11]],
+    bankDelay: 0.012,
+    crossover: 0.61,
+    rumble: 0.052,
+    idleCutoffHz: 555,
+    loadCutoffHz: 4_250,
+    level: 1.03,
+    whine: null,
   },
 } satisfies Record<string, EngineVoice>;
 
