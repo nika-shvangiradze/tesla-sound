@@ -112,7 +112,7 @@ export default function AdminConsole() {
                     <tr key={user.phone}>
                       <th scope="row">{user.phone}</th>
                       <td><span className={`badge ${active ? 'badge-good' : ''}`}>{active ? 'Active' : user.gpsUntil ? 'Expired' : 'Locked'}</span></td>
-                      <td>{user.gpsUntil ? formatDate.format(user.gpsUntil) : '—'}</td>
+                      <td className="admin-expiry"><span>Expires · </span>{user.gpsUntil ? formatDate.format(user.gpsUntil) : '—'}</td>
                       <td>
                         <div className="admin-row-actions">
                           <form onSubmit={(event) => {
@@ -121,9 +121,19 @@ export default function AdminConsole() {
                             const plan = PLANS.find((item) => item.id === value);
                             if (plan) void change(user.phone, plan.id);
                           }}>
-                            <select name="plan" aria-label={`Plan for ${user.phone}`} disabled={!!busyPhone || loading}>
-                              {PLANS.map((item) => <option key={item.id} value={item.id}>{item.label} · ₾{item.price}</option>)}
-                            </select>
+                            <fieldset className="admin-plans" disabled={!!busyPhone || loading}>
+                              <legend className="sr-only">Plan for {user.phone}</legend>
+                              {PLANS.map((item) => {
+                                const id = `admin-plan-${user.phone}-${item.id}`;
+                                return <div key={item.id}>
+                                  <input className="sr-only voice-radio" name="plan" id={id} type="radio"
+                                    value={item.id} defaultChecked={item.id === 'month'} />
+                                  <label className="voice-card" htmlFor={id}>
+                                    <span>{item.label}</span><strong>₾{item.price}</strong>
+                                  </label>
+                                </div>;
+                              })}
+                            </fieldset>
                             <button className="button primary" disabled={!!busyPhone || loading}>{active ? 'Extend' : 'Activate'}</button>
                           </form>
                           {user.gpsUntil && (pendingRevoke === user.phone ? (

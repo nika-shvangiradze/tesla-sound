@@ -9,6 +9,7 @@ const SWEEP = 266;
 const SPEED_SCALES: Record<VoiceId, number> = {
   shelby: 240, c63: 320, ferrari: 360, porsche: 360, hellcat: 320,
   countach: 320, huracan: 360, demon: 320, subaru: 280,
+  m5: 320, supra: 280,
 };
 
 function angle(value: number, max: number) {

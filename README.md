@@ -32,6 +32,8 @@ Ferrari-ს V8 და Porsche-ს ბოქსერული ექვსცი
 
 სელექტორში ასევე არის **Lamborghini Countach QV**-ის V12, **Huracán Performante**-ს V10, **Dodge Challenger SRT Demon**-ის კომპრესორიანი V8 და **Subaru Impreza WRX STI**-ის ტურბო ბოქსერი. Demon-ის პრესეტი 2018 წლის მოდელითაა შთაგონებული, Subaru-ს პრესეტი კი 2004 წლის ჩრდილოამერიკული WRX STI-ით. [Countach](https://www.lamborghini.com/en-en/history/milestones) · [Huracán](https://www.lamborghini.com/en-en/history/huracan-performante) · [Demon](https://blog.stellantisnorthamerica.com/2017/06/08/creating-the-dodge-challenger-srt-demon-v-8/) · [Impreza WRX STI](https://www.subaru.ca/WebPage.aspx?ArticleID=598&WebPageId=5013&WebSiteId=284)
 
+**BMW M5 E60**-ის პრესეტი S85 V10-ის მაღალ ბრუნზე მკვეთრი ხმითაა გამორჩეული. **Toyota Supra 2JZ-GTE**-ს პრესეტში ტურბოს ხმა ორ საფეხურად იზრდება და დატვირთვის მოხსნისას მოკლე შიშინი ისმის. [BMW M5 E60](https://www.bmw-m.com/en/topics/magazine-article-pool/the-bmw-m5-of-2005.html) · [Toyota Supra](https://global.toyota/en/detail/7868203)
+
 ნაგულისხმევად ხმა იკვრება Web Audio-თი. **Try AudioWorklet** ჩართე ხმის გაშვებამდე, თუ ამ გზის გამოცდა გინდა. ჩატვირთვის ან დამუშავების შეცდომის დროს დაკვრა სტანდარტულ Web Audio-ზე გადადის. პედლიდან დინამიკამდე რეალური დაყოვნება მანქანაში უნდა გაიზომოს.
 
 ## ლოკალურად გაშვება

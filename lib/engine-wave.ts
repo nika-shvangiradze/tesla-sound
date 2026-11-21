@@ -207,11 +207,57 @@ export const ENGINE_VOICES = {
     shiftTimeScale: 1.10,
     whine: { level: 0.075, rpmRatio: 0.26 },
   },
+  m5: {
+    make: 'BMW',
+    model: 'M5 E60 V10',
+    description: 'S85 V10 rasp with a sharp upper-RPM howl',
+    banks: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+    pulseStrength: [1, 0.97, 1.015, 0.98, 1.03, 0.98, 1.04, 0.96, 1.02, 0.99],
+    timing: [0, 0.003, -0.004, 0.003, -0.003, 0.002, -0.003, 0.004, -0.002, 0.003],
+    attack: 710,
+    resonances: [[10, 41, 0.55], [20, 63, 0.27], [31, 82, 0.32], [51, 113, 0.14]],
+    bankDelay: 0.022,
+    crossover: 0.44,
+    rumble: 0.055,
+    idleCutoffHz: 680,
+    loadCutoffHz: 4_650,
+    level: 0.98,
+    redlineRpm: 8_250,
+    revRiseSeconds: 0.11,
+    shiftTimeScale: 1.00,
+    whine: null,
+  },
+  supra: {
+    make: 'Toyota',
+    model: 'Supra 2JZ-GTE',
+    description: 'A80 inline-six, progressive twin-turbo spool and lift-off hiss',
+    banks: FLAT_SIX_BANKS,
+    pulseStrength: [1.04, 1.02, 0.95, 1.03, 0.96, 1],
+    timing: [0, 0.001, 0, 0.002, 0, 0.001],
+    attack: 405,
+    resonances: [[6, 30, 0.61], [12, 47, 0.35], [25, 72, 0.19], [43, 117, 0.08]],
+    bankDelay: 0.010,
+    crossover: 0.71,
+    rumble: 0.075,
+    idleCutoffHz: 490,
+    loadCutoffHz: 3_360,
+    level: 1.00,
+    redlineRpm: 6_800,
+    revRiseSeconds: 0.14,
+    shiftTimeScale: 1.14,
+    whine: null,
+  },
 } satisfies Record<string, EngineVoice>;
 
 export type VoiceId = keyof typeof ENGINE_VOICES;
 export const VOICE_IDS = Object.keys(ENGINE_VOICES) as VoiceId[];
 export const DEFAULT_VOICE: VoiceId = 'shelby';
+
+export function supraBoostTarget(rpm: number, load: number) {
+  const firstTurbo = Math.max(0, Math.min(1, (rpm - 1_800) / 2_200));
+  const secondTurbo = Math.max(0, Math.min(1, (rpm - 3_500) / 1_600));
+  return Math.max(0, Math.min(1, (load - 0.13) / 0.87)) * (0.70 * firstTurbo + 0.30 * secondTurbo);
+}
 
 function exhaustPulse(phase: number, voice: EngineVoice) {
   let value = 0;

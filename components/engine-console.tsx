@@ -131,7 +131,7 @@ export default function EngineConsole() {
               {mode === 'manual' ? (
                 <div className="mode-controls">
                   <label className="dial-label" htmlFor="manual-rpm"><span>Target RPM</span><b>{engine.manualRpm.toLocaleString('en-US')}</b></label>
-                  <input id="manual-rpm" type="range" min={IDLE_RPM} max={redlineRpm} step={20}
+                  <input id="manual-rpm" type="range" min={IDLE_RPM} max={redlineRpm} step={redlineRpm % 20 === 0 ? 20 : 10}
                     value={engine.manualRpm} onChange={(event) => engine.setManualRpm(event.target.valueAsNumber)} />
                   <button className="button rev-button" onClick={engine.rev} disabled={!running}>Rev</button>
                 </div>

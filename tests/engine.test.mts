@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { driveTarget, IDLE_RPM, REDLINE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from '../lib/drive-model.ts';
-import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, makeEngineWave, VOICE_IDS } from '../lib/engine-wave.ts';
+import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, makeEngineWave, supraBoostTarget, VOICE_IDS } from '../lib/engine-wave.ts';
 
 test('GPS drive starts in a suitable gear and locks shifts until the shift interval elapses', () => {
   const cruising = trackSpeed(85, 1000, null);
@@ -138,4 +138,20 @@ test('C63 emphasizes higher engine orders than Shelby at the same RPM', () => {
     return highOrders / total;
   }
   assert.ok(relativeDifferenceEnergy(c63) > 2 * relativeDifferenceEnergy(shelby));
+});
+
+test('the S85 and 2JZ presets retain the correct cylinder counts and distinct exhaust cycles', () => {
+  assert.equal(ENGINE_VOICES.m5.banks.length, 10);
+  assert.equal(ENGINE_VOICES.m5.redlineRpm, 8250);
+  assert.equal(ENGINE_VOICES.supra.banks.length, 6);
+  assert.notDeepEqual(makeEngineWave(3600, 'm5'), makeEngineWave(3600, 'huracan'));
+  assert.notDeepEqual(makeEngineWave(3600, 'supra'), makeEngineWave(3600, 'porsche'));
+});
+
+test('Supra boost rises in stages with RPM and falls on throttle lift', () => {
+  assert.equal(supraBoostTarget(780, 1), 0);
+  assert.ok(supraBoostTarget(3200, 1) > 0);
+  assert.ok(supraBoostTarget(4700, 1) > supraBoostTarget(3900, 1));
+  assert.equal(supraBoostTarget(6500, 1), 1);
+  assert.equal(supraBoostTarget(6500, 0.1), 0);
 });

@@ -182,6 +182,18 @@
   --dial-muted: #c0d7ed; --dial-accent: #a0d6ff; --dial-hand: #ff5c64;
   --dial-readout: #152334; --dial-type: 'Segoe UI', sans-serif;
 }
+.instrument-cluster[data-voice="m5"] {
+  --cluster-lit: #25282d; --dial-face: #121417; --dial-light: #2d3036;
+  --dial-outer: #a6abb2; --dial-edge: #434950; --dial-label: #f4f5f0;
+  --dial-muted: #c9cbd0; --dial-accent: #dadee4; --dial-hand: #f45b45;
+  --dial-readout: #18181a; --dial-type: 'Segoe UI', sans-serif;
+}
+.instrument-cluster[data-voice="supra"] {
+  --cluster-lit: #2b251b; --dial-face: #131619; --dial-light: #272c2c;
+  --dial-outer: #7a7e77; --dial-edge: #413b2e; --dial-label: #f3ecdc;
+  --dial-muted: #d5c6a8; --dial-accent: #ffb85f; --dial-hand: #ff9254;
+  --dial-readout: #1c201c; --dial-type: 'Arial Narrow', system-ui, sans-serif;
+}
 @media (max-width: 430px) {
   .instrument-cluster { padding-block: 12px 13px; }
   .dial-readout { padding-top: 2px; padding-bottom: 2px; }
