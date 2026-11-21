@@ -214,4 +214,17 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
       tach: scale(9_000, 1_000, 200, -132, 264), needle: 'fine',
     },
   },
+  gaz24: {
+    make: 'GAZ', model: 'Nugzara 24', variant: 'GAZ-24 Volga · ZMZ-24D',
+    engine: { idleRpm: 650, redlineRpm: 4_700, limiterRpm: 5_000, responseSeconds: 0.22 },
+    gearbox: {
+      type: 'manual', name: 'GAZ', ratios: [3.5, 2.26, 1.45, 1],
+      reverseRatios: null, finalDrive: 4.10, circumferenceM: 2.03,
+    },
+    topSpeed: { kmh: 145, kind: 'stated' },
+    cluster: {
+      layout: 'speed-first', speed: { unit: 'km/h', scale: scale(180, 30, 10, -125, 250) },
+      tach: scale(6_000, 1_000, 250, -125, 250), needle: 'classic',
+    },
+  },
 };

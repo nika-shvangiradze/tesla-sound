@@ -120,12 +120,12 @@ export default function EngineConsole() {
                   {VOICE_IDS.map((id) => {
                     const { make, model } = VEHICLES[id];
                     return (
-                      <div key={id} className="voice-choice">
+                      <div key={id} className="voice-choice" data-voice={id}>
                         <input className="sr-only voice-radio" type="radio" name="engine-voice" id={`voice-${id}`}
                           value={id} checked={engine.voice === id} onChange={() => engine.setVoice(id)} />
                         <label className="voice-card" htmlFor={`voice-${id}`}>
                           <span className="voice-make">{make}</span>
-                          <span className="voice-model">{model}</span>
+                          <span className="voice-model">{t(model)}</span>
                         </label>
                       </div>
                     );

@@ -5,9 +5,9 @@ import { displaySpeed, gaugeAngle, gaugeTicks } from '../lib/instrument-scale.ts
 import { VEHICLES } from '../lib/vehicle-profiles.ts';
 import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, makeEngineWave, supraBoostTarget, VOICE_IDS } from '../lib/engine-wave.ts';
 
-test('all 12 variants have bounded forward gearing and can reach their highest gear', () => {
+test('all variants have bounded forward gearing and can reach their highest gear', () => {
   const counts = { shelby: 4, c63: 7, ferrari: 7, porsche: 7, hellcat: 8,
-    countach: 5, huracan: 7, demon: 8, subaru: 6, m5: 7, supra: 6, m3: 6 } as const;
+    countach: 5, huracan: 7, demon: 8, subaru: 6, m5: 7, supra: 6, m3: 6, gaz24: 4 } as const;
   assert.deepEqual(Object.keys(VEHICLES).sort(), [...VOICE_IDS].sort());
   for (const id of VOICE_IDS) {
     const { gearbox, engine, cluster } = VEHICLES[id];

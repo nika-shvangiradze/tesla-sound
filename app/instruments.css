@@ -242,6 +242,12 @@
   --dial-muted: #b6ccdc; --dial-accent: #79bdf1; --dial-hand: #f4704c;
   --dial-readout: #13202b; --dial-type: 'Segoe UI', sans-serif;
 }
+.instrument-cluster[data-voice="gaz24"] {
+  --cluster-lit: #422951; --dial-face: #1d1525; --dial-light: #3a2548;
+  --dial-outer: #9872aa; --dial-edge: #50355c; --dial-label: #fff0d2;
+  --dial-muted: #d9bedf; --dial-accent: #f6c574; --dial-hand: #ffad62;
+  --dial-readout: #271a2f; --dial-type: Georgia, 'Times New Roman', serif;
+}
 @media (max-width: 430px) {
   .instrument-cluster { padding-block: 12px 13px; }
   .dial-readout { padding-top: 2px; padding-bottom: 2px; }

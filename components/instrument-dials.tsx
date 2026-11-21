@@ -80,7 +80,7 @@ export default function InstrumentDials({ voice, rpm, speed }: { voice: VoiceId;
   const tachFirst = cluster.layout === 'tach-first';
   return (
     <div className="instrument-cluster" data-voice={voice} data-layout={cluster.layout} data-needle={cluster.needle}>
-      <p className="cluster-model"><span>{make}</span> {model}<small>{t(variant)}</small></p>
+      <p className="cluster-model"><span>{make}</span> {t(model)}<small>{t(variant)}</small></p>
       <div className="instrument-dials">
         {tachFirst ? tachometer : speedometer}
         {tachFirst ? speedometer : tachometer}
