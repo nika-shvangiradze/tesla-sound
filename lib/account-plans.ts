@@ -1,4 +1,9 @@
 export const SUPPORT_PHONE = '+995551099081';
+export const LOCAL_PHONE_PATTERN = '5[0-9]{8}';
+const LEGACY_PHONE_PATTERN = '[+](?!9955[0-9]{8}$)[1-9][0-9]{7,14}';
+export const SIGN_IN_PHONE_PATTERN = `${LOCAL_PHONE_PATTERN}|${LEGACY_PHONE_PATTERN}`;
+const localPhone = new RegExp(`^(?:${LOCAL_PHONE_PATTERN})$`);
+const signInPhone = new RegExp(`^(?:${SIGN_IN_PHONE_PATTERN})$`);
 export const PLANS = [
   { id: 'month', months: 1, price: 5, label: '1 month' },
   { id: 'quarter', months: 3, price: 12, label: '3 months' },
@@ -19,11 +24,13 @@ export function hasGpsAccess(account: AccountView | null, now = Date.now()) {
   return account?.role === 'admin' || (account?.gpsUntil ?? 0) > now;
 }
 
-export function normalizePhone(raw: unknown) {
-  if (typeof raw !== 'string' || raw.length > 35) return null;
-  const text = raw.trim().replace(/[\s()-]/g, '');
-  const phone = /^5\d{8}$/.test(text) ? `+995${text}` : text;
-  return /^\+[1-9]\d{7,14}$/.test(phone) ? phone : null;
+export function parsePhoneInput(raw: unknown, signIn = false) {
+  if (typeof raw !== 'string' || !(signIn ? signInPhone : localPhone).test(raw)) return null;
+  return raw.startsWith('+') ? raw : `+995${raw}`;
+}
+
+export function storedPhone(raw: unknown) {
+  return typeof raw === 'string' && /^\+[1-9][0-9]{7,14}$/.test(raw) ? raw : null;
 }
 
 export function addMonths(timestamp: number, months: number) {

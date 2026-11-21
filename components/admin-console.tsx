@@ -7,6 +7,7 @@ import { AccountMenu, accountRequest, useAccount } from './account';
 import { PLANS, type AccountView, type PlanId } from '../lib/account-plans';
 
 const PAGE_SIZE = 20;
+type AccountChange = { action: 'grant'; plan: PlanId } | { action: 'revoke' | 'delete' };
 const formatDate = new Intl.DateTimeFormat('en-GB', {
   dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tbilisi',
 });
@@ -19,11 +20,11 @@ export default function AdminConsole() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [busyPhone, setBusyPhone] = useState<string | null>(null);
-  const [pendingRevoke, setPendingRevoke] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{ phone: string; createdAt: number; action: 'revoke' | 'delete' } | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(0);
-  const pendingGrant = useRef<{ phone: string; plan: PlanId; id: string } | null>(null);
+  const pendingGrant = useRef<{ phone: string; createdAt: number; plan: PlanId; id: string } | null>(null);
   const requestId = useRef(0);
   const canManage = account?.role === 'admin';
 
@@ -36,6 +37,10 @@ export default function AdminConsole() {
         { action: 'list', offset, search },
       );
       if (requestId.current !== id) return;
+      if (offset >= result.total && offset > 0) {
+        setOffset(Math.max(0, Math.ceil(result.total / PAGE_SIZE) - 1) * PAGE_SIZE);
+        return;
+      }
       setAccounts(result.accounts);
       setTotal(result.total);
       setNow(result.serverTime);
@@ -51,23 +56,32 @@ export default function AdminConsole() {
     return () => { requestId.current++; };
   }, [canManage, load]);
 
-  async function change(phone: string, plan?: PlanId) {
+  async function change(user: AccountView, operation: AccountChange) {
     if (busyPhone) return;
+    const { phone, createdAt } = user;
     setBusyPhone(phone);
     setNotice('');
     setError('');
     try {
-      const previous = pendingGrant.current;
-      if (plan && (previous?.phone !== phone || previous.plan !== plan)) {
-        pendingGrant.current = { phone, plan, id: crypto.randomUUID() };
+      const payload = { action: operation.action, phone, createdAt };
+      if (operation.action === 'grant') {
+        const { plan } = operation;
+        const previous = pendingGrant.current;
+        const grant = previous?.phone === phone && previous.createdAt === createdAt && previous.plan === plan
+          ? previous : { phone, createdAt, plan, id: crypto.randomUUID() };
+        pendingGrant.current = grant;
+        await accountRequest({ ...payload, plan, id: grant.id });
+      } else {
+        await accountRequest(payload);
       }
-      await accountRequest({ action: plan ? 'grant' : 'revoke', phone, plan, id: pendingGrant.current?.id });
       pendingGrant.current = null;
-      setPendingRevoke(null);
-      setNotice(plan ? `GPS Drive access updated for ${phone}.` : `GPS Drive revoked for ${phone}.`);
+      setConfirmation(null);
+      const message = operation.action === 'grant' ? 'GPS Drive access updated for'
+        : operation.action === 'revoke' ? 'GPS Drive turned off for' : 'Account deleted for';
+      setNotice(`${message} ${phone}.`);
       await load();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Could not update access.');
+      setError(failure instanceof Error ? failure.message : 'Could not update the account.');
     } finally {
       setBusyPhone(null);
     }
@@ -83,7 +97,7 @@ export default function AdminConsole() {
       </header>
       <main>
         <div className="engine-intro">
-          <div><h1>Admin panel</h1><p>Find an account and manage its GPS Drive access.</p></div>
+          <div><h1>Admin panel</h1><p>Manage user accounts and GPS Drive access.</p></div>
         </div>
         <section className="panel admin-panel" aria-labelledby="admin-users">
           <div className="panel-heading"><h2 id="admin-users">User accounts</h2><span>{total} found</span></div>
@@ -91,6 +105,7 @@ export default function AdminConsole() {
             event.preventDefault();
             const next = String(new FormData(event.currentTarget).get('phone') ?? '').replace(/\D/g, '');
             if (next === search && offset === 0) { void load(); return; }
+            setConfirmation(null);
             setSearch(next);
             setOffset(0);
           }}>
@@ -108,6 +123,8 @@ export default function AdminConsole() {
                 <thead><tr><th>Phone</th><th>GPS Drive</th><th>Expires (Tbilisi)</th><th>Manage</th></tr></thead>
                 <tbody>{accounts.map((user) => {
                   const active = (user.gpsUntil ?? 0) > now;
+                  const confirming = confirmation?.phone === user.phone && confirmation.createdAt === user.createdAt
+                    ? confirmation.action : null;
                   return (
                     <tr key={user.phone}>
                       <th scope="row">{user.phone}</th>
@@ -119,9 +136,9 @@ export default function AdminConsole() {
                             event.preventDefault();
                             const value = new FormData(event.currentTarget).get('plan');
                             const plan = PLANS.find((item) => item.id === value);
-                            if (plan) void change(user.phone, plan.id);
+                            if (plan) void change(user, { action: 'grant', plan: plan.id });
                           }}>
-                            <fieldset className="admin-plans" disabled={!!busyPhone || loading}>
+                            <fieldset className="admin-plans" disabled={!!busyPhone || loading || !!confirming}>
                               <legend className="sr-only">Plan for {user.phone}</legend>
                               {PLANS.map((item) => {
                                 const id = `admin-plan-${user.phone}-${item.id}`;
@@ -134,14 +151,25 @@ export default function AdminConsole() {
                                 </div>;
                               })}
                             </fieldset>
-                            <button className="button primary" disabled={!!busyPhone || loading}>{active ? 'Extend' : 'Activate'}</button>
+                            <button className="button primary" disabled={!!busyPhone || loading || !!confirming}>{active ? 'Extend' : 'Activate'}</button>
                           </form>
-                          {user.gpsUntil && (pendingRevoke === user.phone ? (
+                          {confirming ? (
+                            <div className="admin-confirm">
+                              <p>{confirming === 'delete' ? `Delete ${user.phone} and end all their sessions?` : `Turn off GPS Drive for ${user.phone}?`}</p>
+                              <button className="button account-danger" disabled={!!busyPhone || loading}
+                                onClick={() => void change(user, { action: confirming })}>
+                                {confirming === 'delete' ? 'Confirm delete' : 'Confirm turn off'}
+                              </button>
+                              <button className="button" disabled={!!busyPhone} onClick={() => setConfirmation(null)}>Cancel</button>
+                            </div>
+                          ) : (
                             <>
-                              <button className="button" disabled={!!busyPhone} onClick={() => void change(user.phone)}>Confirm revoke</button>
-                              <button className="button" disabled={!!busyPhone} onClick={() => setPendingRevoke(null)}>Cancel</button>
+                              {active && <button className="button" disabled={!!busyPhone || loading}
+                                onClick={() => setConfirmation({ phone: user.phone, createdAt: user.createdAt, action: 'revoke' })}>Turn off GPS Drive</button>}
+                              <button className="button account-danger" disabled={!!busyPhone || loading}
+                                onClick={() => setConfirmation({ phone: user.phone, createdAt: user.createdAt, action: 'delete' })}>Delete user</button>
                             </>
-                          ) : <button className="button" disabled={!!busyPhone || loading} onClick={() => setPendingRevoke(user.phone)}>Revoke</button>)}
+                          )}
                         </div>
                       </td>
                     </tr>

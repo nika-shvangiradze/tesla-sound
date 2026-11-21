@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { hasGpsAccess, SUPPORT_PHONE } from '../lib/account-plans';
+import { hasGpsAccess, LOCAL_PHONE_PATTERN, SIGN_IN_PHONE_PATTERN, SUPPORT_PHONE } from '../lib/account-plans';
 import type { AccountView } from '../lib/account-plans';
 
 const ENDPOINT = '/.netlify/functions/account';
@@ -128,6 +128,7 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
   const [register, setRegister] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [phone, setPhone] = useState(setup ? SUPPORT_PHONE.slice(4) : '');
   const confirmation = setup || register;
   const title = setup ? 'Administrator setup' : register ? 'Create an account' : 'Sign in';
 
@@ -145,7 +146,7 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
     try {
       await submit({
         action: setup ? 'setup' : register ? 'register' : 'login',
-        phone: setup ? SUPPORT_PHONE : form.get('phone'), password, confirmPassword,
+        phone: form.get('phone'), password, confirmPassword,
         ...(setup ? { setupToken: form.get('setupToken') } : {}),
       });
       if (setup) router.replace('/');
@@ -166,8 +167,10 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
           <button className="button" aria-pressed={register} disabled={busy} onClick={() => { setRegister(true); setError(''); }}>Register</button>
         </div>}
         <form className="account-form" onSubmit={save}>
-          <label>Phone number<input name="phone" type="tel" autoComplete="tel" placeholder="+995 5XX XXX XXX"
-            required maxLength={35} {...(setup ? { value: SUPPORT_PHONE, readOnly: true } : {})} /></label>
+          <label>Phone number<input name="phone" type="tel" inputMode="tel" autoComplete="username"
+            placeholder="555555555" aria-describedby="phone-format" pattern={confirmation ? LOCAL_PHONE_PATTERN : SIGN_IN_PHONE_PATTERN}
+            required value={phone} readOnly={setup} onChange={(event) => setPhone(event.target.value.replace(/\s/g, ''))} />
+            <span id="phone-format">Enter 9 digits without spaces, e.g. 555555555.</span></label>
           <label>Password<input name="password" type="password" required maxLength={128}
             minLength={setup ? 12 : register ? 8 : 1} autoComplete={confirmation ? 'new-password' : 'current-password'} /></label>
           {confirmation && <label>Confirm password<input name="confirmPassword" type="password" required
@@ -182,6 +185,67 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
   );
 }
 
+function PasswordSettings({ minLength }: { minLength: number }) {
+  const { submit } = useAccount();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const form = useRef<HTMLFormElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [changed, setChanged] = useState(false);
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    const currentPassword = fields.get('currentPassword');
+    const password = fields.get('password');
+    const confirmPassword = fields.get('confirmPassword');
+    setError('');
+    if (password !== confirmPassword) {
+      setError('The passwords do not match.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await submit({ action: 'change-password', currentPassword, password, confirmPassword });
+      form.current?.reset();
+      setChanged(true);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Could not change your password.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <button className="button" type="button" onClick={() => {
+        form.current?.reset();
+        setError('');
+        setChanged(false);
+        dialog.current?.showModal();
+      }}>Change password</button>
+      <dialog ref={dialog} className="password-dialog panel" aria-label="Change password"
+        onClose={() => form.current?.reset()}
+        onCancel={(event) => { if (busy) event.preventDefault(); }}>
+        <div className="panel-heading">
+          <h2>Change password</h2>
+          <button className="button" type="button" disabled={busy} onClick={() => dialog.current?.close()}>Close</button>
+        </div>
+        <div className="password-body">
+          <form className="account-form" ref={form} onSubmit={save} hidden={changed}>
+            <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" required maxLength={128} /></label>
+            <label>New password<input name="password" type="password" autoComplete="new-password" required minLength={minLength} maxLength={128} /></label>
+            <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" required maxLength={128} /></label>
+            {error && <p className="account-error" role="alert">{error}</p>}
+            <button className="button primary" disabled={busy}>{busy ? 'Saving…' : 'Save password'}</button>
+          </form>
+          {changed && <p role="status">Password changed. Your other sessions have been signed out.</p>}
+        </div>
+      </dialog>
+    </>
+  );
+}
+
 export function AccountMenu() {
   const { account, submit } = useAccount();
   const [busy, setBusy] = useState(false);
@@ -190,6 +254,7 @@ export function AccountMenu() {
   return (
     <div className="account-menu">
       {account.role === 'admin' && <Link className="engine-nav" href="/admin/">Admin</Link>}
+      <PasswordSettings minLength={account.role === 'admin' ? 12 : 8} />
       <button className="button" disabled={busy} onClick={async () => {
         setBusy(true);
         setError('');

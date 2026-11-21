@@ -12,6 +12,7 @@
 .account-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .account-tabs [aria-pressed="true"] { border-color: #4da598; color: #a4fbec; background: #173632; }
 .account-form { display: grid; gap: 13px; }
+.account-form[hidden] { display: none; }
 .account-form label { display: grid; gap: 6px; color: var(--muted); font-size: .9rem; }
 .account-form input, .admin-search input {
   width: 100%;
@@ -30,6 +31,9 @@
 .account-error { color: #ffd0ab; font-size: .875rem; }
 .account-nav, .account-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .account-menu .button { min-height: 40px; }
+.password-dialog { width: min(430px, calc(100% - 28px)); max-height: calc(100svh - 24px); margin: auto; overflow: auto; color: var(--text); }
+.password-dialog::backdrop { background: #050b10da; }
+.password-body { padding: 19px; }
 .gps-locked { border: 1px solid #805848; border-radius: 4px; padding: 2px 5px; color: #ffca9d; font-size: .68rem; }
 .purchase-dialog { width: min(570px, calc(100% - 28px)); max-height: calc(100svh - 24px); margin: auto; overflow: auto; }
 .purchase-dialog::backdrop { background: #050b10da; }
@@ -53,6 +57,10 @@
 .admin-table thead { color: var(--muted); }
 .admin-table th[scope="row"] { white-space: nowrap; }
 .admin-row-actions, .admin-row-actions form { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.admin-confirm { display: flex; flex-basis: 100%; align-items: center; flex-wrap: wrap; gap: 8px; }
+.admin-confirm p { width: 100%; color: var(--muted); font-size: .875rem; }
+.button.account-danger { color: #ffc0b6; border-color: #805047; }
+.button.account-danger:hover:not(:disabled) { background: #392227; border-color: #db8a7b; }
 .admin-plans { display: grid; grid-template-columns: repeat(4, minmax(61px, 1fr)); gap: 5px; padding: 0; margin: 0; border: 0; }
 .admin-plans .voice-card { min-height: 47px; padding: 4px 7px; gap: 2px; text-align: center; }
 .admin-plans .voice-card span { color: var(--muted); font-size: .71rem; white-space: nowrap; }
