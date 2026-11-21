@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { IDLE_RPM } from '../lib/drive-model';
 import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
+import { VEHICLES, type TransmissionType } from '../lib/vehicle-profiles';
 import { useEngine } from '../lib/use-engine';
 import InstrumentDials from './instrument-dials';
 import { useAccount } from './account';
@@ -12,7 +12,13 @@ import GpsPurchase from './gps-purchase';
 import DiscordLink from './discord-link';
 import { hasGpsAccess } from '../lib/account-plans';
 
-const gearNumbers = [1, 2, 3, 4, 5, 6];
+const gearboxTypes: Record<TransmissionType, string> = {
+  manual: 'manual',
+  automatic: 'automatic',
+  'dual-clutch': 'dual-clutch',
+  'automated-manual': 'automated manual',
+  'race-manual': 'race manual',
+};
 
 export default function EngineConsole() {
   const engine = useEngine();
@@ -23,10 +29,9 @@ export default function EngineConsole() {
   const [accessError, setAccessError] = useState('');
   const { frame, mode, path, state } = engine;
   const voice = ENGINE_VOICES[engine.voice];
-  const { redlineRpm } = voice;
+  const { gearbox, engine: { idleRpm, limiterRpm } } = VEHICLES[engine.voice];
   const running = state === 'playing';
   const active = running || state === 'paused' || state === 'starting';
-  const rpm = Math.min(frame.rpm, redlineRpm);
   const loadPercent = Math.round(frame.load * 100);
   const status = { off: 'Sound off', starting: 'Starting audio', playing: 'Sound on', paused: 'Audio paused', error: 'Audio error' }[state];
   const audioPath = path === 'worklet' ? 'AudioWorklet' : path === 'fallback' ? 'Web Audio fallback' : 'Web Audio';
@@ -60,7 +65,9 @@ export default function EngineConsole() {
         <div className="engine-intro">
           <div>
             <h1>{t('V8 GPS Edition')}</h1>
-            <p>{t('Synthesized engine sounds · six-speed virtual gearbox')}</p>
+            <p>{t('{count}-speed {type} · {name}', {
+              count: gearbox.ratios.length, type: t(gearboxTypes[gearbox.type]), name: gearbox.name,
+            })}</p>
           </div>
           <div className="engine-actions">
             <button className="button primary" onClick={() => {
@@ -82,9 +89,9 @@ export default function EngineConsole() {
               <h2 id="engine-instruments">{t('Engine instruments')}</h2>
               <span className={`badge ${running ? 'badge-good' : state === 'error' ? 'badge-warning' : ''}`} role="status">{t(status)}</span>
             </div>
-            <InstrumentDials voice={engine.voice} rpm={rpm} speed={frame.speed} />
+            <InstrumentDials voice={engine.voice} rpm={frame.rpm} speed={frame.speed} />
             <dl className="engine-readings">
-              <div><dt>{t('Virtual gear')}</dt><dd>{frame.gear ?? '—'}</dd></div>
+              <div><dt>{t('Simulated gear')}</dt><dd>{frame.gear ?? '—'}</dd></div>
               <div><dt>{t('Engine load')}</dt><dd>{loadPercent}<span>%</span></dd></div>
             </dl>
             <div className="engine-foot">
@@ -93,11 +100,16 @@ export default function EngineConsole() {
                 {frame.shift && <span className="badge badge-good">{t(frame.shift === 'up' ? 'Upshift' : 'Rev match')}</span>}
               </div>
               {mode === 'gps' && (
-                <div className="gear-strip" aria-label={t('Six virtual gears')}>
-                  {gearNumbers.map((gear) => <span key={gear} className={gear === frame.gear ? 'current-gear' : ''}>{gear}</span>)}
+                <div className="gear-strip" aria-label={t('Simulated forward gears')}>
+                  {gearbox.ratios.map((_, index) => {
+                    const gear = index + 1;
+                    return <span key={gear} aria-current={gear === frame.gear ? 'true' : undefined}
+                      className={gear === frame.gear ? 'current-gear' : ''}>{gear}</span>;
+                  })}
                 </div>
               )}
             </div>
+            <p className="instrument-note">{t('RPM and gear are simulated')}{gearbox.estimatedGearing && ` · ${t('Estimated gearing')}`}</p>
           </section>
 
           <section className="panel engine-settings" aria-labelledby="engine-controls">
@@ -107,7 +119,7 @@ export default function EngineConsole() {
                 <legend>{t('Engine sound')}</legend>
                 <div className="voice-grid">
                   {VOICE_IDS.map((id) => {
-                    const { make, model } = ENGINE_VOICES[id];
+                    const { make, model } = VEHICLES[id];
                     return (
                       <div key={id} className="voice-choice">
                         <input className="sr-only voice-radio" type="radio" name="engine-voice" id={`voice-${id}`}
@@ -131,13 +143,13 @@ export default function EngineConsole() {
               {mode === 'manual' ? (
                 <div className="mode-controls">
                   <label className="dial-label" htmlFor="manual-rpm"><span>{t('Target RPM')}</span><b>{engine.manualRpm.toLocaleString('en-US')}</b></label>
-                  <input id="manual-rpm" type="range" min={IDLE_RPM} max={redlineRpm} step={redlineRpm % 20 === 0 ? 20 : 10}
+                  <input id="manual-rpm" type="range" min={idleRpm} max={limiterRpm} step={10}
                     value={engine.manualRpm} onChange={(event) => engine.setManualRpm(event.target.valueAsNumber)} />
                   <button className="button rev-button" onClick={engine.rev} disabled={!running}>{t('Rev')}</button>
                 </div>
               ) : (
                 <div className="mode-controls drive-explanation">
-                  <p>{t('GPS speed controls RPM and shifts automatically. The engine returns to idle during a GPS gap')}</p>
+                  <p>{t('Measured GPS speed drives automatic gear simulation. The engine returns to idle during a GPS gap')}</p>
                 </div>
               )}
               <div className="volume-controls">

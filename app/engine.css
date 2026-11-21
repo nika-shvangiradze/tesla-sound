@@ -36,7 +36,8 @@
   color: var(--muted);
   font-size: .875rem;
 }
-.gear-strip { display: flex; gap: 5px; }
+.gear-strip { display: flex; flex-wrap: wrap; gap: 5px; }
+.instrument-note { padding: 0 19px 12px; color: var(--muted); font-size: .78rem; }
 .drive-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .gear-strip span {
   display: grid;

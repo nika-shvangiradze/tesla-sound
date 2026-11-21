@@ -1,24 +1,27 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { clamp, driveTarget, IDLE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from './drive-model';
-import type { DriveTarget, SpeedTracking, Transmission } from './drive-model';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { clamp, driveTarget, SPEED_TIMEOUT_MS, trackSpeed } from './drive-model';
+import type { DriveTarget, SimulatedGear, SpeedTracking, Transmission } from './drive-model';
 import { EngineAudio, type AudioPath } from './engine-audio';
-import { DEFAULT_VOICE, ENGINE_VOICES, type VoiceId } from './engine-wave';
+import { DEFAULT_VOICE, type VoiceId } from './engine-wave';
 import { makeFix, OPTIONS } from './gps';
+import { VEHICLES } from './vehicle-profiles';
 
 export type EngineMode = 'manual' | 'gps';
 type AudioStatus = 'off' | 'starting' | 'playing' | 'paused' | 'error';
-type Frame = { rpm: number; load: number; gear: number | null; speed: number | null; gpsStatus: string; shift: DriveTarget['shift'] };
+type Frame = { rpm: number; load: number; gear: SimulatedGear | null; speed: number | null; gpsStatus: string; shift: DriveTarget['shift'] };
 type Gps = { tracking: SpeedTracking | null; issue: string | null };
-type Session = { audio: EngineAudio; timer?: number; resuming: boolean; preferWorklet: boolean };
+type Session = { audio: EngineAudio; resuming: boolean; preferWorklet: boolean; started: boolean };
+type Simulation = { rpm: number; last: number; lastDisplay: number; transmission: Transmission | null; voice: VoiceId; mode: EngineMode };
 
-const emptyFrame: Frame = { rpm: IDLE_RPM, load: 0, gear: null, speed: null, gpsStatus: 'GPS standby', shift: null };
+const idleRpm = VEHICLES[DEFAULT_VOICE].engine.idleRpm;
+const emptyFrame: Frame = { rpm: idleRpm, load: 0, gear: 'N', speed: null, gpsStatus: 'GPS standby', shift: null };
 const newGps = (): Gps => ({ tracking: null, issue: null });
 
 export function useEngine() {
   const [mode, renderMode] = useState<EngineMode>('manual');
-  const [manualRpm, renderManualRpm] = useState(IDLE_RPM);
+  const [manualRpm, renderManualRpm] = useState(idleRpm);
   const [volume, renderVolume] = useState(36);
   const [preferWorklet, setPreferWorklet] = useState(false);
   const [voice, renderVoice] = useState<VoiceId>(DEFAULT_VOICE);
@@ -29,7 +32,53 @@ export function useEngine() {
   const controls = useRef({ mode, manualRpm, volume, voice, revUntil: 0 });
   const gps = useRef<Gps>(newGps());
   const session = useRef<Session | null>(null);
+  const simulation = useRef<Simulation>({ rpm: idleRpm, last: 0, lastDisplay: -Infinity, transmission: null, voice: DEFAULT_VOICE, mode: 'manual' });
   const active = state === 'playing' || state === 'paused';
+
+  const step = useCallback((force = false, snap = false) => {
+    const now = performance.now();
+    const sim = simulation.current;
+    const dt = clamp((now - sim.last) / 1_000, 0, 0.12);
+    sim.last = now;
+    const input = controls.current;
+    const vehicle = VEHICLES[input.voice];
+    const { idleRpm, limiterRpm, responseSeconds } = vehicle.engine;
+    const changed = input.mode !== sim.mode || input.voice !== sim.voice;
+    if (changed) sim.transmission = null;
+    sim.mode = input.mode;
+    sim.voice = input.voice;
+
+    const inDrive = input.mode === 'gps';
+    const reading = gps.current;
+    const drive = inDrive ? driveTarget(reading.tracking, sim.transmission, now, vehicle) : null;
+    sim.transmission = drive?.fresh ? drive : null;
+    const revving = !inDrive && now < input.revUntil;
+    const target = drive?.rpm ?? (revving ? Math.max(input.manualRpm, limiterRpm - 260) : input.manualRpm);
+    const delta = target - sim.rpm;
+    const response = drive ? drive.shift ? 0.032 : drive.fresh ? 0.045 : 0.16
+      : delta >= 0 ? responseSeconds : responseSeconds * 1.45;
+    if (changed || snap || Math.abs(delta) < 2) sim.rpm = target;
+    else sim.rpm += delta * (1 - Math.exp(-dt / response));
+    sim.rpm = clamp(sim.rpm, idleRpm, limiterRpm);
+    const rpm = Math.round(sim.rpm);
+    const load = drive?.load ?? (revving ? 0.97
+      : clamp(0.1 + (rpm - idleRpm) / 15_000 + (changed || snap ? 0 : Math.max(0, delta) / 6_000), 0.08, 1));
+    const gpsStatus = !inDrive ? 'GPS standby'
+      : drive?.fresh ? 'Receiving GPS speed'
+      : reading.issue ?? (reading.tracking ? 'GPS delayed · idling' : 'Waiting for GPS speed');
+    const lift = !inDrive && !changed && !snap && delta < -150 ? clamp(-delta / 3800, 0, 1) : 0;
+    const sound = session.current;
+    if (sound?.started) sound.audio.update(rpm, load, input.volume / 100, input.voice, drive?.overrun ?? lift);
+
+    if (changed || force || now - sim.lastDisplay >= 33) {
+      sim.lastDisplay = now;
+      setFrame({
+        rpm, load, gear: inDrive ? drive?.fresh ? drive.gear : null : 'N',
+        speed: drive?.fresh ? reading.tracking?.measuredKmh ?? null : null,
+        gpsStatus, shift: drive?.shift ?? null,
+      });
+    }
+  }, []);
 
   useEffect(() => {
     function suspendOnHide() {
@@ -45,7 +94,7 @@ export function useEngine() {
   }, []);
 
   useEffect(() => {
-    if (!active || mode !== 'gps') return;
+    if (mode !== 'gps') return;
     const current = gps.current;
     if (!window.isSecureContext || !navigator.geolocation) {
       current.issue = window.isSecureContext ? 'GPS unavailable' : 'GPS requires HTTPS';
@@ -85,68 +134,28 @@ export function useEngine() {
       alive = false;
       if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
     };
-  }, [active, mode]);
+  }, [mode]);
+
+  useEffect(() => {
+    if (!active && mode !== 'gps') return;
+    step(true);
+    const timer = window.setInterval(step, 20);
+    return () => window.clearInterval(timer);
+  }, [active, mode, step]);
 
   function dispose() {
     const current = session.current;
     session.current = null;
     if (!current) return;
-    window.clearInterval(current.timer);
     current.audio.stop();
   }
 
   function stop() {
     dispose();
-    gps.current = newGps();
     controls.current.revUntil = 0;
-    setFrame(emptyFrame);
+    step(true, controls.current.mode === 'manual');
     setState('off');
     setError('');
-  }
-
-  function runAudio(current: Session) {
-    let last = performance.now();
-    let lastDisplay = -Infinity;
-    let rpm = IDLE_RPM;
-    let transmission: Transmission | null = null;
-    let previousMode: EngineMode | undefined;
-    function tick() {
-      const now = performance.now();
-      const dt = clamp((now - last) / 1000, 0, 0.12);
-      last = now;
-      const input = controls.current;
-      const { redlineRpm, revRiseSeconds, shiftTimeScale } = ENGINE_VOICES[input.voice];
-      if (input.mode !== previousMode) transmission = null;
-      previousMode = input.mode;
-      const inDrive = input.mode === 'gps';
-      const reading = gps.current;
-      const drive = inDrive ? driveTarget(reading.tracking, transmission, now, redlineRpm, shiftTimeScale) : null;
-      transmission = drive?.fresh ? drive : null;
-      const revving = now < input.revUntil;
-      const targetRpm = drive?.rpm ?? (revving ? Math.max(input.manualRpm, redlineRpm - 260) : input.manualRpm);
-      const delta = targetRpm - rpm;
-      const manualResponse = targetRpm > rpm ? revRiseSeconds : revRiseSeconds * 1.45;
-      const driveResponse = drive?.shift ? 0.035 * shiftTimeScale : drive?.fresh ? 0.055 : 0.18;
-      const relax = inDrive ? driveResponse : manualResponse;
-      rpm += delta * (1 - Math.exp(-dt / relax));
-      if (Math.abs(targetRpm - rpm) < 2) rpm = targetRpm;
-      const load = drive?.load ?? (revving ? 0.97
-        : clamp(0.1 + (rpm - IDLE_RPM) / 15_000 + Math.max(0, delta) / 6_000, 0.08, 1));
-      const gpsStatus = !inDrive ? 'GPS standby'
-        : drive?.fresh ? 'Receiving GPS speed'
-        : reading.issue ?? (reading.tracking ? 'GPS delayed · idling' : 'Waiting for GPS speed');
-      const lift = !inDrive && delta < -150 ? clamp(-delta / 3800, 0, 1) : 0;
-      current.audio.update(rpm, load, input.volume / 100, input.voice, drive?.overrun ?? lift);
-      if (now - lastDisplay >= 65) {
-        lastDisplay = now;
-        setFrame({
-          rpm: Math.round(rpm), load, gear: drive?.fresh ? drive.gear : null,
-          speed: drive?.fresh ? reading.tracking?.measuredKmh ?? null : null, gpsStatus, shift: drive?.shift ?? null,
-        });
-      }
-    }
-    tick();
-    current.timer = window.setInterval(tick, 20);
   }
 
   async function start() {
@@ -156,7 +165,7 @@ export function useEngine() {
     setState('starting');
     try {
       if (!current) {
-        current = { audio: new EngineAudio(controls.current.voice), resuming: false, preferWorklet };
+        current = { audio: new EngineAudio(controls.current.voice), resuming: false, preferWorklet, started: false };
         session.current = current;
         setPath('standard');
       }
@@ -166,20 +175,20 @@ export function useEngine() {
       if (session.current !== starting) return;
       starting.resuming = false;
       setState('playing');
-      if (starting.timer === undefined) {
+      if (!starting.started) {
+        starting.started = true;
         starting.audio.context.onstatechange = () => {
           if (session.current === starting && !starting.resuming) {
             setState(starting.audio.context.state === 'running' ? 'playing' : 'paused');
           }
         };
-        runAudio(starting);
         if (starting.preferWorklet) void starting.audio.enableWorklet(setPath);
       }
+      step(true);
     } catch (failure) {
       if (session.current !== current) return;
       dispose();
-      gps.current = newGps();
-      setFrame(emptyFrame);
+      step(true, controls.current.mode === 'manual');
       setState('error');
       setError(failure instanceof Error ? failure.message : 'Sound could not start.');
     }
@@ -190,25 +199,30 @@ export function useEngine() {
     controls.current.mode = next;
     controls.current.revUntil = 0;
     gps.current = newGps();
-    setFrame((previous) => ({ ...previous, gear: null, speed: null, shift: null,
-      gpsStatus: next === 'gps' && session.current ? 'Waiting for GPS speed' : 'GPS standby' }));
     renderMode(next);
+    step(true);
   }
 
   return {
     mode, manualRpm, volume, voice, preferWorklet, state, path, error, frame, start, stop, setMode, setPreferWorklet,
     setVoice(id: VoiceId) {
-      controls.current.voice = id;
-      const limit = ENGINE_VOICES[id].redlineRpm;
-      if (controls.current.manualRpm > limit) {
-        controls.current.manualRpm = limit;
-        renderManualRpm(limit);
-      }
+      const input = controls.current;
+      if (input.voice === id) return;
+      const next = VEHICLES[id].engine;
+      input.manualRpm = input.manualRpm === VEHICLES[input.voice].engine.idleRpm
+        ? next.idleRpm : clamp(input.manualRpm, next.idleRpm, next.limiterRpm);
+      input.voice = id;
+      input.revUntil = 0;
+      renderManualRpm(input.manualRpm);
       renderVoice(id);
+      step(true);
     },
     setManualRpm(value: number) {
-      controls.current.manualRpm = value;
-      renderManualRpm(value);
+      const input = controls.current;
+      const { idleRpm, limiterRpm } = VEHICLES[input.voice].engine;
+      input.manualRpm = clamp(value, idleRpm, limiterRpm);
+      renderManualRpm(input.manualRpm);
+      if (!session.current?.started) step(true, true);
     },
     setVolume(value: number) {
       controls.current.volume = value;

@@ -2,8 +2,6 @@ export const REFERENCE_RPM = 1_600;
 export const LOOP_CYCLES = 4;
 
 export type EngineVoice = {
-  make: string;
-  model: string;
   description: string;
   banks: readonly number[];
   pulseStrength: readonly number[];
@@ -16,9 +14,6 @@ export type EngineVoice = {
   idleCutoffHz: number;
   loadCutoffHz: number;
   level: number;
-  redlineRpm: number;
-  revRiseSeconds: number;
-  shiftTimeScale: number;
   whine: { level: number; rpmRatio: number; coastLevel?: number } | null;
 };
 
@@ -28,8 +23,6 @@ const FLAT_SIX_BANKS = [0, 1, 0, 1, 0, 1];
 
 export const ENGINE_VOICES = {
   shelby: {
-    make: 'Shelby',
-    model: 'GT500 ’70',
     description: 'Deep, loping big-block rumble',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.12, 0.83, 1.09, 0.89, 1.04, 0.91, 1.13, 0.81],
@@ -42,14 +35,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 380,
     loadCutoffHz: 2_150,
     level: 0.94,
-    redlineRpm: 6_800,
-    revRiseSeconds: 0.19,
-    shiftTimeScale: 1.30,
     whine: null,
   },
   c63: {
-    make: 'Mercedes-AMG',
-    model: 'C63 W204',
     description: 'Tight pulses and a brighter exhaust note',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.02, 0.97, 1.03, 0.95, 1.02, 0.96, 1.04, 0.97],
@@ -62,14 +50,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 620,
     loadCutoffHz: 3_450,
     level: 1.13,
-    redlineRpm: 6_800,
-    revRiseSeconds: 0.14,
-    shiftTimeScale: 0.96,
     whine: null,
   },
   ferrari: {
-    make: 'Ferrari',
-    model: '458 Italia',
     description: 'High-revving flat-plane V8',
     banks: FLAT_PLANE_BANKS,
     pulseStrength: [1.02, 0.99, 0.97, 1.01, 1, 0.96, 1.03, 1],
@@ -82,14 +65,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 760,
     loadCutoffHz: 4_630,
     level: 0.98,
-    redlineRpm: 9_000,
-    revRiseSeconds: 0.095,
-    shiftTimeScale: 0.74,
     whine: null,
   },
   porsche: {
-    make: 'Porsche',
-    model: '911 GT3',
     description: 'Metallic flat-six exhaust note',
     banks: FLAT_SIX_BANKS,
     pulseStrength: [1, 0.96, 1.04, 0.95, 1.02, 0.98],
@@ -102,14 +80,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 710,
     loadCutoffHz: 4_180,
     level: 1.06,
-    redlineRpm: 9_000,
-    revRiseSeconds: 0.10,
-    shiftTimeScale: 0.78,
     whine: null,
   },
   hellcat: {
-    make: 'Dodge',
-    model: 'Hellcat',
     description: 'HEMI V8 rumble with supercharger whine under load',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.06, 0.9, 1.07, 0.94, 1.04, 0.91, 1.08, 0.92],
@@ -122,14 +95,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 480,
     loadCutoffHz: 3_200,
     level: 0.96,
-    redlineRpm: 6_200,
-    revRiseSeconds: 0.15,
-    shiftTimeScale: 0.91,
     whine: { level: 0.16, rpmRatio: 0.30 },
   },
   countach: {
-    make: 'Lamborghini',
-    model: 'Countach QV',
     description: 'Layered, resonant classic V12',
     banks: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
     pulseStrength: [1.03, 0.95, 1.01, 0.97, 1.04, 0.96, 1, 0.98, 1.02, 0.95, 1.04, 0.97],
@@ -142,14 +110,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 660,
     loadCutoffHz: 4_070,
     level: 1.02,
-    redlineRpm: 7_500,
-    revRiseSeconds: 0.17,
-    shiftTimeScale: 1.38,
     whine: null,
   },
   huracan: {
-    make: 'Lamborghini',
-    model: 'Huracán Performante',
     description: 'Sharp, high-revving V10',
     banks: [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
     pulseStrength: [1.04, 0.97, 1.02, 0.98, 1.01, 0.96, 1.04, 0.97, 1.02, 0.99],
@@ -162,14 +125,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 840,
     loadCutoffHz: 4_800,
     level: 0.96,
-    redlineRpm: 8_500,
-    revRiseSeconds: 0.10,
-    shiftTimeScale: 0.72,
     whine: null,
   },
   demon: {
-    make: 'Dodge',
-    model: 'SRT Demon',
     description: 'Heavy HEMI rumble and aggressive supercharger whine',
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.14, 0.85, 1.1, 0.94, 1.075, 0.89, 1.09, 0.94],
@@ -182,14 +140,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 505,
     loadCutoffHz: 3_450,
     level: 0.93,
-    redlineRpm: 6_500,
-    revRiseSeconds: 0.14,
-    shiftTimeScale: 0.85,
     whine: { level: 0.23, rpmRatio: 0.35 },
   },
   subaru: {
-    make: 'Subaru',
-    model: 'Impreza WRX STI',
     description: 'Offbeat flat-four burble with a light turbo whistle',
     banks: [0, 0, 1, 1],
     pulseStrength: [1.09, 0.86, 1.06, 0.90],
@@ -202,14 +155,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 410,
     loadCutoffHz: 2_100,
     level: 1.08,
-    redlineRpm: 7_000,
-    revRiseSeconds: 0.155,
-    shiftTimeScale: 1.10,
     whine: { level: 0.075, rpmRatio: 0.26 },
   },
   m5: {
-    make: 'BMW',
-    model: 'M5 E60 V10',
     description: 'S85 V10 rasp with a sharp upper-RPM howl',
     banks: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
     pulseStrength: [1, 0.97, 1.015, 0.98, 1.03, 0.98, 1.04, 0.96, 1.02, 0.99],
@@ -222,14 +170,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 680,
     loadCutoffHz: 4_650,
     level: 0.98,
-    redlineRpm: 8_250,
-    revRiseSeconds: 0.11,
-    shiftTimeScale: 1.00,
     whine: null,
   },
   supra: {
-    make: 'Toyota',
-    model: 'Supra 2JZ-GTE',
     description: 'A80 inline-six, progressive twin-turbo spool and lift-off hiss',
     banks: FLAT_SIX_BANKS,
     pulseStrength: [1.04, 1.02, 0.95, 1.03, 0.96, 1],
@@ -242,14 +185,9 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 490,
     loadCutoffHz: 3_360,
     level: 1.00,
-    redlineRpm: 6_800,
-    revRiseSeconds: 0.14,
-    shiftTimeScale: 1.14,
     whine: null,
   },
   m3gtr: {
-    make: 'BMW',
-    model: 'M3 GTR E46',
     description: 'P60 V8 race exhaust with a rising gearbox whine',
     banks: FLAT_PLANE_BANKS,
     pulseStrength: [1.04, 0.97, 1.02, 0.96, 1.03, 0.97, 1.01, 0.96],
@@ -262,9 +200,6 @@ export const ENGINE_VOICES = {
     idleCutoffHz: 730,
     loadCutoffHz: 4_550,
     level: 1.01,
-    redlineRpm: 8_500,
-    revRiseSeconds: 0.092,
-    shiftTimeScale: 0.74,
     whine: { level: 0.11, rpmRatio: 0.19, coastLevel: 0.035 },
   },
 } satisfies Record<string, EngineVoice>;

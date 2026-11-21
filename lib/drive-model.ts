@@ -1,13 +1,19 @@
-export const IDLE_RPM = 780;
-export const REDLINE_RPM = 6_800;
+import type { TransmissionType, VehicleProfile } from './vehicle-profiles';
+
 export const SPEED_TIMEOUT_MS = 1_250;
-const GEAR_RATIOS = [3.13, 2.07, 1.52, 1.18, 0.92, 0.73];
-const FINAL_DRIVE = 3.73;
-const TYRE_CIRCUMFERENCE_M = 2.08;
 const LOW_SPEED_KMH = 1.5;
-const SHIFT_LOCK_MS = 380;
-const UPSHIFT_MS = 155;
-const DOWNSHIFT_MS = 215;
+
+// Shift maps, clutch/convertor behavior and timings are simulator tuning.
+const SHIFT_MAPS: Record<TransmissionType, {
+  upBase: number; upLoad: number; downBase: number; upMs: number; downMs: number;
+  cut: number; revMatchRpm: number; launchKmh: number; neutralAtRest: boolean;
+}> = {
+  manual: { upBase: 0.37, upLoad: 0.49, downBase: 0.21, upMs: 280, downMs: 310, cut: 0.12, revMatchRpm: 260, launchKmh: 15, neutralAtRest: true },
+  automatic: { upBase: 0.24, upLoad: 0.65, downBase: 0.17, upMs: 160, downMs: 200, cut: 0.45, revMatchRpm: 130, launchKmh: 20, neutralAtRest: false },
+  'dual-clutch': { upBase: 0.32, upLoad: 0.60, downBase: 0.18, upMs: 95, downMs: 145, cut: 0.58, revMatchRpm: 200, launchKmh: 13, neutralAtRest: false },
+  'automated-manual': { upBase: 0.36, upLoad: 0.54, downBase: 0.20, upMs: 175, downMs: 215, cut: 0.17, revMatchRpm: 300, launchKmh: 14, neutralAtRest: false },
+  'race-manual': { upBase: 0.43, upLoad: 0.50, downBase: 0.24, upMs: 115, downMs: 165, cut: 0.10, revMatchRpm: 360, launchKmh: 24, neutralAtRest: true },
+};
 
 export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -34,8 +40,8 @@ export function trackSpeed(speedKmh: number, atMs: number, previous: SpeedTracki
   return { atMs, measuredKmh: speedKmh, filteredKmh, accelerationMps2 };
 }
 
-function wheelRpm(speedKmh: number, gear: number) {
-  return speedKmh * 1000 / (60 * TYRE_CIRCUMFERENCE_M) * FINAL_DRIVE * GEAR_RATIOS[gear - 1];
+export function engagedRpm(speedKmh: number, gear: number, gearbox: VehicleProfile['gearbox']) {
+  return speedKmh * 1_000 / (60 * gearbox.circumferenceM) * gearbox.finalDrive * gearbox.ratios[gear - 1];
 }
 
 function smoothstep(value: number) {
@@ -43,7 +49,8 @@ function smoothstep(value: number) {
   return t * t * (3 - 2 * t);
 }
 
-export type Transmission = { gear: number; shiftedAtMs: number; fromGear?: number };
+export type SimulatedGear = number | 'N';
+export type Transmission = { gear: SimulatedGear; shiftedAtMs: number; fromGear?: number };
 export type DriveTarget = Transmission & {
   rpm: number;
   load: number;
@@ -56,66 +63,71 @@ export function driveTarget(
   tracking: SpeedTracking | null,
   previous: Transmission | null,
   now: number,
-  redlineRpm = REDLINE_RPM,
-  shiftTimeScale = 1,
+  vehicle: VehicleProfile,
 ): DriveTarget {
+  const { engine, gearbox } = vehicle;
+  const { idleRpm, limiterRpm, redlineRpm } = engine;
+  const tune = SHIFT_MAPS[gearbox.type];
+  const restGear = tune.neutralAtRest ? 'N' : 1;
+  const resting = { gear: restGear, shiftedAtMs: -Infinity, rpm: idleRpm, load: 0.08, overrun: 0, shift: null } as const;
   const age = tracking ? Math.max(0, now - tracking.atMs) : Infinity;
   if (!tracking || age >= SPEED_TIMEOUT_MS) {
-    return { gear: 1, shiftedAtMs: -Infinity, rpm: IDLE_RPM, load: 0.08, overrun: 0, shift: null, fresh: false };
+    return { ...resting, fresh: false };
   }
+  if (tracking.measuredKmh < LOW_SPEED_KMH) return { ...resting, fresh: true };
 
   const acceleration = Math.sign(tracking.accelerationMps2) * Math.max(0, Math.abs(tracking.accelerationMps2) - 0.18);
   const freshness = clamp((500 - age) / 300, 0, 1);
   const leadSeconds = (0.19 + Math.min(age, 140) / 1000) * freshness;
   const correctionKmh = clamp(acceleration * leadSeconds * 3.6, -6, 6);
-  const speed = tracking.measuredKmh < LOW_SPEED_KMH ? 0 : Math.max(0, tracking.filteredKmh + correctionKmh);
-  const load = speed === 0 ? 0.08 : clamp(0.18 + acceleration * freshness / 4.1 + speed / 650, 0.07, 1);
+  const speed = Math.max(0, tracking.filteredKmh + correctionKmh);
+  const load = clamp(0.11 + acceleration * freshness / 4.1 + speed / 3_000, 0.07, 1);
   const overrun = speed > 8 ? clamp((-acceleration - 0.2) * freshness / 2.2, 0, 1) : 0;
-  const shiftScale = redlineRpm / REDLINE_RPM;
-  const upAt = (3_450 + load * 2_850) * shiftScale;
-  const downAt = (1_580 + load * 980 + overrun * 260) * shiftScale;
-  let gear = previous?.gear ?? 1;
-  let shiftedAtMs = previous?.shiftedAtMs ?? -Infinity;
-  let fromGear = previous?.fromGear;
+  const upAt = idleRpm + (redlineRpm - idleRpm) * (tune.upBase + load * tune.upLoad);
+  const downAt = Math.max(idleRpm + 100, redlineRpm * (tune.downBase + load * 0.15 + overrun * 0.035));
+  const lastGear = gearbox.ratios.length;
+  const usablePrior = previous && typeof previous.gear === 'number' && previous.gear >= 1 && previous.gear <= lastGear ? previous : null;
+  let gear = usablePrior && typeof usablePrior.gear === 'number' ? usablePrior.gear : 1;
+  let shiftedAtMs = usablePrior?.shiftedAtMs ?? -Infinity;
+  let fromGear = usablePrior?.fromGear;
+  if (fromGear !== undefined && (fromGear < 1 || fromGear > lastGear)) fromGear = undefined;
+  const rpmAt = (index: number) => engagedRpm(speed, index, gearbox);
+  const shiftHold = Math.max(tune.upMs, tune.downMs) + 160;
 
-  if (speed === 0) {
-    gear = 1;
-    shiftedAtMs = -Infinity;
-    fromGear = undefined;
-  } else if (!previous) {
-    while (gear < GEAR_RATIOS.length && wheelRpm(speed, gear) > upAt) gear++;
-  } else if (age <= 400 && now - shiftedAtMs >= SHIFT_LOCK_MS) {
-    if (gear < GEAR_RATIOS.length && wheelRpm(speed, gear) > upAt) {
+  if (!usablePrior) {
+    while (gear < lastGear && rpmAt(gear) > upAt) gear++;
+  } else if (age <= 400 && now - shiftedAtMs >= shiftHold) {
+    if (gear < lastGear && rpmAt(gear) > upAt) {
       fromGear = gear;
       gear++;
       shiftedAtMs = now;
-    } else if (gear > 1 && wheelRpm(speed, gear) < downAt && wheelRpm(speed, gear - 1) < upAt - 400) {
+    } else if (gear > 1 && rpmAt(gear) < downAt && rpmAt(gear - 1) < upAt - redlineRpm * 0.055) {
       fromGear = gear;
       gear--;
       shiftedAtMs = now;
     }
   }
 
-  const lockedRpm = wheelRpm(speed, gear);
-  const launchBlend = gear === 1 ? smoothstep(speed / 14) : 1;
-  const launchRpm = IDLE_RPM + Math.max(0, acceleration) * 140 * smoothstep(speed / 4);
+  const lockedRpm = rpmAt(gear);
+  const launchBlend = smoothstep(Math.min(speed / tune.launchKmh, lockedRpm / (idleRpm + 250)));
+  const launchRpm = idleRpm + (load * 440 + Math.max(0, acceleration) * 120) * smoothstep(speed / 6);
   let rpm = lockedRpm * launchBlend + launchRpm * (1 - launchBlend);
   let shapedLoad = load;
   let shift: DriveTarget['shift'] = null;
   if (fromGear !== undefined) {
-    const elapsed = (now - shiftedAtMs) / shiftTimeScale;
-    if (fromGear < gear && elapsed < UPSHIFT_MS) {
+    const elapsed = now - shiftedAtMs;
+    const beforeRpm = clamp(rpmAt(fromGear), idleRpm, limiterRpm);
+    if (fromGear < gear && elapsed < tune.upMs) {
       shift = 'up';
-      const blend = smoothstep((elapsed - 12) / 115);
-      rpm = wheelRpm(speed, fromGear) * (1 - blend) + lockedRpm * blend;
-      shapedLoad *= 0.20 + 0.80 * smoothstep((elapsed - 35) / 120);
-    } else if (fromGear > gear && elapsed < DOWNSHIFT_MS) {
+      const blend = smoothstep(elapsed / tune.upMs);
+      rpm = beforeRpm * (1 - blend) + rpm * blend;
+      shapedLoad *= tune.cut + (1 - tune.cut) * blend;
+    } else if (fromGear > gear && elapsed < tune.downMs) {
       shift = 'down';
-      const blend = smoothstep(elapsed / 130);
-      rpm = wheelRpm(speed, fromGear) * (1 - blend) + lockedRpm * blend;
-      // A brief rev-match raises the RPM and opens the throttle during engagement.
-      const blip = Math.sin(Math.PI * clamp(elapsed / DOWNSHIFT_MS, 0, 1));
-      rpm += 265 * blip ** 3;
+      const blend = smoothstep(elapsed / tune.downMs);
+      rpm = beforeRpm * (1 - blend) + rpm * blend;
+      const blip = Math.sin(Math.PI * clamp(elapsed / tune.downMs, 0, 1));
+      rpm += tune.revMatchRpm * blip ** 3;
       shapedLoad = Math.max(load, 0.52 * blip ** 2);
     } else {
       fromGear = undefined;
@@ -125,7 +137,7 @@ export function driveTarget(
     gear,
     shiftedAtMs,
     fromGear,
-    rpm: clamp(rpm, IDLE_RPM, redlineRpm),
+    rpm: clamp(rpm, idleRpm, limiterRpm),
     load: shapedLoad,
     overrun: shift === 'down' ? overrun * (1 - shapedLoad) : overrun,
     shift,

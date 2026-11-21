@@ -1,68 +1,120 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { driveTarget, IDLE_RPM, REDLINE_RPM, SPEED_TIMEOUT_MS, trackSpeed } from '../lib/drive-model.ts';
+import { driveTarget, engagedRpm, SPEED_TIMEOUT_MS, trackSpeed } from '../lib/drive-model.ts';
+import { displaySpeed, gaugeAngle, gaugeTicks } from '../lib/instrument-scale.ts';
+import { VEHICLES } from '../lib/vehicle-profiles.ts';
 import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, makeEngineWave, supraBoostTarget, VOICE_IDS } from '../lib/engine-wave.ts';
 
-test('GPS drive starts in a suitable gear and locks shifts until the shift interval elapses', () => {
-  const cruising = trackSpeed(85, 1000, null);
-  const first = driveTarget(cruising, null, 1000);
-  assert.ok(first.gear > 1 && first.gear <= 6);
-  assert.ok(first.rpm > IDLE_RPM && first.rpm <= REDLINE_RPM);
-  const early = driveTarget(cruising, { gear: 1, shiftedAtMs: 1000 }, 1100);
-  const later = driveTarget(cruising, early, 1400);
-  assert.equal(early.gear, 1);
-  assert.equal(later.gear, 2);
-  assert.equal(later.shift, 'up');
-  assert.ok(later.load < early.load);
-  const engaged = driveTarget(trackSpeed(85, 1558, null), later, 1558);
-  assert.equal(engaged.gear, 2);
-  assert.equal(engaged.shift, null);
-  assert.ok(engaged.rpm < later.rpm);
-  assert.ok(engaged.load > later.load);
+test('all 12 variants have bounded forward gearing and can reach their highest gear', () => {
+  const counts = { shelby: 4, c63: 7, ferrari: 7, porsche: 7, hellcat: 8,
+    countach: 5, huracan: 7, demon: 8, subaru: 6, m5: 7, supra: 6, m3gtr: 6 } as const;
+  assert.deepEqual(Object.keys(VEHICLES).sort(), [...VOICE_IDS].sort());
+  for (const id of VOICE_IDS) {
+    const { gearbox, engine, cluster } = VEHICLES[id];
+    assert.equal(gearbox.ratios.length, counts[id], id);
+    assert.ok(gearbox.ratios.every((ratio, index) => ratio > 0 && (!index || ratio < gearbox.ratios[index - 1])), id);
+    assert.ok(gearbox.finalDrive > 0 && gearbox.circumferenceM > 0, id);
+    assert.ok(gearbox.reverseRatios === null || gearbox.reverseRatios.every((ratio) => ratio > 0), id);
+    assert.ok(engine.idleRpm < engine.redlineRpm && engine.redlineRpm <= engine.limiterRpm && engine.limiterRpm <= cluster.tach.max, id);
+    const high = driveTarget(trackSpeed(240, 1000, null), null, 1000, VEHICLES[id]);
+    assert.equal(high.gear, counts[id], id);
+    assert.ok(high.rpm >= engine.idleRpm && high.rpm <= engine.limiterRpm, id);
+  }
 });
 
-test('prediction raises RPM on acceleration and tapers away before a GPS outage returns to idle', () => {
+test('all dial endpoints and ticks share the needle calibration', () => {
+  for (const { cluster, engine } of Object.values(VEHICLES)) {
+    for (const scale of [cluster.speed.scale, cluster.tach]) {
+      if (!scale) continue;
+      const ticks = gaugeTicks(scale);
+      assert.equal(gaugeAngle(scale, scale.min - 1), scale.start);
+      assert.equal(gaugeAngle(scale, scale.max + 1), scale.start + scale.sweep);
+      assert.equal(ticks.at(-1)?.major, true);
+      assert.ok(ticks.every((tick, index) => !index || tick.angle > ticks[index - 1].angle));
+      for (const [value, angle] of scale.calibration ?? []) assert.equal(gaugeAngle(scale, value), angle);
+      assert.ok(ticks.filter((tick) => tick.major).every((tick) => tick.angle === gaugeAngle(scale, tick.value)));
+    }
+    assert.ok(gaugeAngle(cluster.tach, engine.redlineRpm) <= gaugeAngle(cluster.tach, engine.limiterRpm));
+  }
+  const m5 = VEHICLES.m5.cluster.speed.scale!;
+  assert.notEqual(gaugeAngle(m5, 120), m5.start + 120 / m5.max * m5.sweep);
+  assert.equal(displaySpeed(160.9344, 'mph'), 100);
+  assert.equal(displaySpeed(0, 'km/h'), 0);
+});
+
+test('engaged RPM uses the selected gearbox and wheel speed', () => {
+  for (const id of ['shelby', 'countach', 'm5', 'hellcat'] as const) {
+    const vehicle = VEHICLES[id];
+    const tracking = trackSpeed(100, 1000, null);
+    const result = driveTarget(tracking, null, 1000, vehicle);
+    assert.ok(typeof result.gear === 'number');
+    const { ratios, finalDrive, circumferenceM } = vehicle.gearbox;
+    const expected = 100_000 / (60 * circumferenceM) * ratios[result.gear - 1] * finalDrive;
+    assert.ok(Math.abs(engagedRpm(100, result.gear, vehicle.gearbox) - expected) < 1e-9);
+    assert.ok(Math.abs(result.rpm - expected) < 1e-9);
+  }
+});
+
+test('standstill, clutch slip and stale speed have separate behavior', () => {
+  for (const [id, expectedGear] of [['shelby', 'N'], ['hellcat', 1]] as const) {
+    const car = VEHICLES[id];
+    const stationary = trackSpeed(0, 1100, trackSpeed(80, 1000, null));
+    const rest = driveTarget(stationary, { gear: 3, shiftedAtMs: 1000 }, 1100, car);
+    assert.equal(rest.gear, expectedGear);
+    assert.equal(rest.rpm, car.engine.idleRpm);
+    assert.equal(rest.fresh, true);
+    const launch = driveTarget(trackSpeed(5, 1200, null), rest, 1200, car);
+    assert.equal(launch.gear, 1);
+    assert.ok(launch.rpm >= car.engine.idleRpm);
+    assert.notEqual(launch.rpm, engagedRpm(5, 1, car.gearbox));
+    const stale = driveTarget(stationary, rest, 1100 + SPEED_TIMEOUT_MS, car);
+    assert.equal(stale.fresh, false);
+    assert.equal(stale.rpm, car.engine.idleRpm);
+  }
+});
+
+test('prediction raises simulated RPM only while speed samples are recent', () => {
   const tracking = trackSpeed(20, 1100, trackSpeed(14, 1000, null));
-  const noAcceleration = { ...tracking, accelerationMps2: 0 };
-  assert.ok(tracking.accelerationMps2 > 0 && tracking.accelerationMps2 < 7);
-  assert.ok(driveTarget(tracking, null, 1100).rpm > driveTarget(noAcceleration, null, 1100).rpm);
-  assert.equal(driveTarget(tracking, null, 1700).rpm, driveTarget(noAcceleration, null, 1700).rpm);
-  const stale = driveTarget(tracking, null, 1100 + SPEED_TIMEOUT_MS);
-  assert.equal(stale.fresh, false);
-  assert.equal(stale.rpm, IDLE_RPM);
+  const constant = { ...tracking, accelerationMps2: 0 };
+  const vehicle = VEHICLES.shelby;
+  const gear = { gear: 1, shiftedAtMs: 1000 };
+  assert.ok(driveTarget(tracking, gear, 1100, vehicle).rpm > driveTarget(constant, gear, 1100, vehicle).rpm);
+  assert.equal(driveTarget(tracking, null, 1700, vehicle).rpm, driveTarget(constant, null, 1700, vehicle).rpm);
   assert.equal(trackSpeed(85, 3000, tracking).accelerationMps2, 0);
 });
 
-test('at zero speed the virtual gearbox returns to first and idles', () => {
-  const stationary = trackSpeed(0, 3000, trackSpeed(60, 2950, null));
-  const target = driveTarget(stationary, { gear: 4, shiftedAtMs: 2990 }, 3000);
-  assert.equal(target.gear, 1);
-  assert.equal(target.rpm, IDLE_RPM);
-  assert.equal(target.fresh, true);
-});
-
-test('a downshift blends into the lower gear with a load blip and returns to overrun', () => {
-  const decelerating = { ...trackSpeed(38, 1000, null), accelerationMps2: -2.8 };
-  const start = driveTarget(decelerating, { gear: 3, shiftedAtMs: -Infinity }, 1000);
-  assert.equal(start.gear, 2);
-  assert.equal(start.shift, 'down');
-  const blip = driveTarget({ ...decelerating, atMs: 1107 }, start, 1107);
-  const engaged = driveTarget({ ...decelerating, atMs: 1220 }, blip, 1220);
-  assert.ok(blip.rpm > start.rpm);
-  assert.ok(blip.load > engaged.load);
+test('a shift interrupts load, respects gearbox cadence, and downshifts with hysteresis', () => {
+  const at = (speed: number, now: number, accel = 0) => ({ ...trackSpeed(speed, now, null), accelerationMps2: accel });
+  const auto = VEHICLES.hellcat;
+  const held = driveTarget(at(65, 1100), { gear: 1, shiftedAtMs: 1000 }, 1100, auto);
+  assert.equal(held.gear, 1);
+  const up = driveTarget(at(65, 1500), held, 1500, auto);
+  assert.equal(up.gear, 2);
+  assert.equal(up.shift, 'up');
+  assert.ok(up.load < held.load);
+  const engaged = driveTarget(at(65, 1700), up, 1700, auto);
   assert.equal(engaged.shift, null);
-  assert.ok(engaged.overrun > 0.7);
+  assert.ok(engaged.rpm < up.rpm);
+  const down = driveTarget(at(35, 2100, -2.8), { gear: 5, shiftedAtMs: 1500 }, 2100, auto);
+  assert.equal(down.gear, 4);
+  assert.equal(down.shift, 'down');
+  const blip = driveTarget(at(35, 2200, -2.8), down, 2200, auto);
+  assert.ok(blip.rpm > down.rpm && blip.load > down.load);
+  const stable = driveTarget(at(35, 2450), blip, 2450, auto);
+  assert.equal(stable.gear, down.gear);
+  assert.equal(stable.shift, null);
+  const changing = { gear: 2, fromGear: 1, shiftedAtMs: 1000 };
+  assert.equal(driveTarget(at(75, 1125), changing, 1125, VEHICLES.porsche).shift, null);
+  assert.equal(driveTarget(at(75, 1125), changing, 1125, VEHICLES.countach).shift, 'up');
 });
 
-test('the faster shift profile engages sooner without changing the gear ratio', () => {
-  const tracking = trackSpeed(75, 1125, null);
-  const shifting = { gear: 2, fromGear: 1, shiftedAtMs: 1000 };
-  const quick = driveTarget(tracking, shifting, 1125, REDLINE_RPM, ENGINE_VOICES.huracan.shiftTimeScale);
-  const classic = driveTarget(tracking, shifting, 1125, REDLINE_RPM, ENGINE_VOICES.countach.shiftTimeScale);
-  assert.equal(quick.gear, classic.gear);
-  assert.equal(quick.shift, null);
-  assert.equal(classic.shift, 'up');
-  assert.ok(quick.rpm < classic.rpm);
+test('the simulated limiter is separate from the red band and gauge maximum', () => {
+  const m5 = VEHICLES.m5;
+  const held = { gear: 1, shiftedAtMs: 1000 };
+  assert.equal(driveTarget(trackSpeed(120, 1000, null), held, 1000, VEHICLES.hellcat).rpm, VEHICLES.hellcat.engine.limiterRpm);
+  assert.equal(driveTarget(trackSpeed(150, 1000, null), held, 1000, m5).rpm, 8_250);
+  assert.equal(m5.engine.redlineRpm, 8_000);
+  assert.equal(m5.cluster.tach.max, 9_000);
 });
 
 test('the four-cycle engine loop adds variation without changing the cycle length or clipping', () => {
@@ -85,21 +137,6 @@ test('each engine voice keeps distinct stereo banks, bounded samples, and a smoo
       assert.ok(Math.abs(wave[0] - wave[wave.length - 1]) < 0.05);
     }
   }
-});
-
-test('the high-revving profiles raise virtual shift points and Hellcat stays below its own redline', () => {
-  const cruising = trackSpeed(55, 1000, null);
-  const original = driveTarget(cruising, null, 1000, ENGINE_VOICES.shelby.redlineRpm);
-  assert.deepEqual(original, driveTarget(cruising, null, 1000));
-  for (const id of ['ferrari', 'porsche'] as const) {
-    assert.equal(ENGINE_VOICES[id].redlineRpm, 9000);
-    const highRev = driveTarget(cruising, null, 1000, ENGINE_VOICES[id].redlineRpm);
-    assert.ok(highRev.gear < original.gear);
-    assert.ok(highRev.rpm > original.rpm);
-  }
-  const limit = ENGINE_VOICES.hellcat.redlineRpm;
-  const heldGear = { gear: 1, shiftedAtMs: 1000 };
-  assert.equal(driveTarget(trackSpeed(100, 1000, null), heldGear, 1000, limit).rpm, limit);
 });
 
 test('the flat-six, flat-plane V8 and Hellcat profiles each generate a distinct cycle', () => {
@@ -142,7 +179,7 @@ test('C63 emphasizes higher engine orders than Shelby at the same RPM', () => {
 
 test('the S85 and 2JZ presets retain the correct cylinder counts and distinct exhaust cycles', () => {
   assert.equal(ENGINE_VOICES.m5.banks.length, 10);
-  assert.equal(ENGINE_VOICES.m5.redlineRpm, 8250);
+  assert.equal(VEHICLES.m5.engine.limiterRpm, 8250);
   assert.equal(ENGINE_VOICES.supra.banks.length, 6);
   assert.notDeepEqual(makeEngineWave(3600, 'm5'), makeEngineWave(3600, 'huracan'));
   assert.notDeepEqual(makeEngineWave(3600, 'supra'), makeEngineWave(3600, 'porsche'));

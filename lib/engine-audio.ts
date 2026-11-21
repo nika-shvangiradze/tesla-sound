@@ -1,4 +1,4 @@
-import { IDLE_RPM } from './drive-model';
+import { VEHICLES } from './vehicle-profiles';
 import { ENGINE_VOICES, LOOP_CYCLES, makeEngineLoop, REFERENCE_RPM, supraBoostTarget, VOICE_IDS, type EngineVoice, type VoiceId } from './engine-wave';
 
 export type AudioPath = 'standard' | 'worklet' | 'fallback';
@@ -30,7 +30,7 @@ export class EngineAudio {
   private readonly releaseFilter: BiquadFilterNode;
   private worklet: { node: AudioWorkletNode; gain: GainNode; rpm: AudioParam } | null = null;
   private disposed = false;
-  private rpm = IDLE_RPM;
+  private rpm: number;
   private load = -1;
   private volume = -1;
   private overrun = -1;
@@ -45,6 +45,7 @@ export class EngineAudio {
     const context = new Context({ latencyHint: 'interactive' });
     this.context = context;
     this.voice = voice;
+    this.rpm = VEHICLES[voice].engine.idleRpm;
     try {
       const cycleFrames = Math.round(context.sampleRate * 120 / REFERENCE_RPM);
       this.loopDuration = cycleFrames / context.sampleRate;
@@ -56,7 +57,7 @@ export class EngineAudio {
         const source = context.createBufferSource();
         source.buffer = buffer;
         source.loop = true;
-        source.playbackRate.value = this.playbackRate(IDLE_RPM);
+        source.playbackRate.value = this.playbackRate(this.rpm);
         const gain = context.createGain();
         gain.gain.value = id === voice ? 1 : 0;
         source.connect(gain).connect(this.standardGain);
@@ -77,7 +78,7 @@ export class EngineAudio {
       this.intakeGain = context.createGain();
       this.intakeGain.gain.value = 0;
       this.boostTone = context.createOscillator();
-      this.boostTone.frequency.value = IDLE_RPM * (ENGINE_VOICES[voice].whine?.rpmRatio ?? 0.30) + 30;
+      this.boostTone.frequency.value = this.rpm * (ENGINE_VOICES[voice].whine?.rpmRatio ?? 0.30) + 30;
       this.boostGain = context.createGain();
       this.boostGain.gain.value = 0;
       this.boostTone.connect(this.boostGain).connect(this.tone);
@@ -157,7 +158,7 @@ export class EngineAudio {
     const dt = Math.min(0.12, Math.max(0, now - this.lastUpdate));
     this.lastUpdate = now;
     const config: EngineVoice = ENGINE_VOICES[voice];
-    const rpmChanged = Math.abs(rpm - this.rpm) > 2;
+    const rpmChanged = rpm !== this.rpm;
     const voiceChanged = this.voice !== voice;
     const loadChanged = Math.abs(load - this.load) > 0.008;
     const overrunChanged = Math.abs(overrun - this.overrun) > 0.02;
