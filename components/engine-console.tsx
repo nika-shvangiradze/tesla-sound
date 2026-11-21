@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
-import { VEHICLES, type TransmissionType } from '../lib/vehicle-profiles';
+import { VEHICLES } from '../lib/vehicle-profiles';
 import { useEngine } from '../lib/use-engine';
 import InstrumentDials from './instrument-dials';
 import { useAccount } from './account';
@@ -11,13 +11,6 @@ import { useLanguage } from './language';
 import GpsPurchase from './gps-purchase';
 import DiscordLink from './discord-link';
 import { hasGpsAccess } from '../lib/account-plans';
-
-const gearboxTypes: Record<TransmissionType, string> = {
-  manual: 'manual',
-  automatic: 'automatic',
-  'dual-clutch': 'dual-clutch',
-  'automated-manual': 'automated manual',
-};
 
 export default function EngineConsole() {
   const engine = useEngine();
@@ -62,12 +55,7 @@ export default function EngineConsole() {
 
       <main>
         <div className="engine-intro">
-          <div>
-            <h1>{t('V8 GPS Edition')}</h1>
-            <p>{t('{count}-speed {type} · {name}', {
-              count: gearbox.ratios.length, type: t(gearboxTypes[gearbox.type]), name: gearbox.name,
-            })}</p>
-          </div>
+          <h1>Grand Theft Audio</h1>
           <div className="engine-actions">
             <button className="button primary" onClick={() => {
               if (mode === 'manual' || gpsEnabled) void engine.start();
