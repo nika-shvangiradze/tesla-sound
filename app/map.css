@@ -1,0 +1,36 @@
+.georgia-map { overflow: hidden; }
+.georgia-map-body { display: grid; grid-template-columns: minmax(260px, 325px) minmax(0, 1fr); }
+.map-sidebar { display: grid; align-content: start; gap: 12px; padding: 15px; }
+.map-search { display: grid; gap: 5px; }
+.map-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.map-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--background);
+}
+.map-search input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.map-results { display: grid; gap: 5px; }
+.map-results .button { width: 100%; justify-content: flex-start; text-align: start; }
+.map-start-actions, .map-route-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.map-sidebar .button { min-height: 44px; padding-inline: 10px; }
+.map-sidebar .button[aria-pressed="true"] { border-color: var(--accent); }
+.map-note { color: var(--muted); font-size: .86rem; line-height: 1.42; }
+.map-endpoints { display: grid; gap: 8px; padding-block: 9px; border-block: 1px solid var(--line); }
+.map-endpoints div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 8px; }
+.map-endpoints dt { color: var(--muted); }
+.map-endpoints dd { overflow-wrap: anywhere; }
+.map-route-summary, .map-provider { color: var(--accent); }
+.map-provider { width: fit-content; font-size: .8rem; text-decoration: underline; }
+.map-view { min-width: 0; border-inline-start: 1px solid var(--line); }
+.map-view > .map-note { padding: 8px 12px; }
+.map-canvas { position: relative; z-index: 0; height: clamp(330px, 59vh, 690px); isolation: isolate; background: #dfe7ea; }
+.map-canvas .leaflet-control-zoom a { width: 40px; height: 40px; line-height: 40px; }
+@media (max-width: 735px) {
+  .georgia-map-body { grid-template-columns: minmax(0, 1fr); }
+  .map-view { border-inline-start: 0; border-top: 1px solid var(--line); }
+  .map-canvas { height: clamp(300px, 49vh, 470px); }
+}

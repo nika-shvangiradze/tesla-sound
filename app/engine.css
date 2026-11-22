@@ -142,7 +142,6 @@
   .engine-intro { align-items: flex-start; gap: 14px; margin-block: 20px 16px; }
   .engine-intro h1 { font-size: clamp(1.95rem, 6vw, 2.8rem); }
   .engine-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-  .engine-guide-button { grid-column: 1 / -1; }
   .engine-actions .button, .mode-picker .button { min-width: 0; min-height: 48px; padding: 6px 8px; text-align: center; line-height: 1.24; }
   .mode-picker .button { flex-wrap: wrap; gap: 4px; }
 }

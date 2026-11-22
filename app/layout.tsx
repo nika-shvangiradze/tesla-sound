@@ -3,6 +3,7 @@ import './globals.css';
 import './engine.css';
 import './instruments.css';
 import './account.css';
+import './map.css';
 import { AccountGate, AccountProvider } from '../components/account';
 import { LanguageProvider } from '../components/language';
 

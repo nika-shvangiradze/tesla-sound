@@ -9,7 +9,7 @@ export default function EngineGuide() {
 
   return (
     <>
-      <button type="button" className="button engine-guide-button" aria-haspopup="dialog"
+      <button type="button" className="button" aria-haspopup="dialog"
         onClick={() => dialog.current?.showModal()}>
         {t('How to use')}
       </button>

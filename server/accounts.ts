@@ -1,6 +1,7 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { addMonths, parsePhoneInput, PLANS, storedPhone, SUPPORT_PHONE } from '../lib/account-plans.ts';
 import type { AccountView } from '../lib/account-plans.ts';
+import { georgiaNavigation } from './georgia-navigation.ts';
 
 const SESSION_SECONDS = 30 * 24 * 60 * 60;
 const RATE_WINDOW_MS = 15 * 60 * 1000;
@@ -197,6 +198,13 @@ export async function handleAccount(req: Request, store: AccountStore, ip: strin
       return reply({ account: null, serverTime: now }, 200, cookie.format('', 0));
     }
     if (!account) throw new ApiError(401, 'Sign in to continue.');
+    if (action === 'map-search' || action === 'map-route') {
+      const key = process.env.HEIGIT_API_KEY?.trim();
+      if (!key) throw new ApiError(503, 'Built-in directions and address search are awaiting setup');
+      await throttle(store, `map:${account.phone}`, 20, now);
+      const result = await georgiaNavigation(action, body, key);
+      return reply(result.data, result.status);
+    }
     if (action === 'change-password') {
       await throttle(store, `change-password:${account.phone}`, 8, now);
       const { currentPassword, password, confirmPassword } = body;

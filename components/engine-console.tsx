@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { ENGINE_VOICES, VOICE_IDS } from '../lib/engine-wave';
 import { VEHICLES } from '../lib/vehicle-profiles';
@@ -13,6 +14,8 @@ import DiscordLink from './discord-link';
 import EngineGuide from './engine-guide';
 import { hasGpsAccess } from '../lib/account-plans';
 
+const GeorgiaMap = dynamic(() => import('./georgia-map'), { ssr: false });
+
 export default function EngineConsole() {
   const engine = useEngine();
   const { t, message } = useLanguage();
@@ -20,6 +23,7 @@ export default function EngineConsole() {
   const [purchase, setPurchase] = useState(false);
   const [checking, setChecking] = useState(false);
   const [accessError, setAccessError] = useState('');
+  const [mapOpen, setMapOpen] = useState(false);
   const { frame, mode, path, state } = engine;
   const voice = ENGINE_VOICES[engine.voice];
   const { gearbox, engine: { idleRpm, limiterRpm } } = VEHICLES[engine.voice];
@@ -69,10 +73,13 @@ export default function EngineConsole() {
               <span className="stop-icon" aria-hidden="true" />{t('Stop Sound')}
             </button>
             <EngineGuide />
+            <button type="button" className="button" aria-expanded={mapOpen} onClick={() => setMapOpen(!mapOpen)}>
+              {t(mapOpen ? 'Back to instruments' : 'Map')}
+            </button>
           </div>
         </div>
 
-        <div className="engine-grid">
+        {mapOpen ? <GeorgiaMap /> : <div className="engine-grid">
           <section className="panel engine-instruments" aria-labelledby="engine-instruments">
             <div className="panel-heading">
               <h2 id="engine-instruments">{t('Engine instruments')}</h2>
@@ -156,7 +163,7 @@ export default function EngineConsole() {
               {accessError && <p className="engine-error" role="alert">{t(accessError)}</p>}
             </div>
           </section>
-        </div>
+        </div>}
       </main>
       {purchase && account && <GpsPurchase phone={account.phone} onClose={() => setPurchase(false)} />}
       <footer>
