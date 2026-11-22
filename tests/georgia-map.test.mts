@@ -11,7 +11,7 @@ test('airport search accepts Georgian, English, transliteration, and IATA codes'
   assert.equal(findGeorgianPlaces('უცნობი მისამართი', 'ka').length, 0);
 });
 
-test('Google Maps URLs retain the chosen airport or pin and optional origin', () => {
+test('Google Maps URLs retain both the selected starting point and destination', () => {
   const airport = findGeorgianPlaces('TBS', 'en')[0];
   const directions = new URL(googleDirections(airport.googleDestination ?? airport.point, [44.8, 41.69]));
   assert.equal(directions.origin, 'https://www.google.com');
@@ -19,8 +19,8 @@ test('Google Maps URLs retain the chosen airport or pin and optional origin', ()
   assert.match(directions.searchParams.get('destination') ?? '', /Tbilisi International Airport.*TBS/);
   assert.equal(directions.searchParams.get('travelmode'), 'driving');
 
-  const pin = new URL(googleDirections([44.95, 41.66]));
-  assert.equal(pin.searchParams.has('origin'), false);
+  const pin = new URL(googleDirections([44.95, 41.66], [44.81, 41.71]));
+  assert.equal(pin.searchParams.get('origin'), '41.71,44.81');
   assert.equal(pin.searchParams.get('destination'), '41.66,44.95');
   assert.equal(new URL(googlePlaceSearch('რუსთაველის 20')).searchParams.get('query'), 'რუსთაველის 20, Georgia');
 });

@@ -45,13 +45,13 @@ export function findGeorgianPlaces(query: string, language: 'en' | 'ka'): MapPla
   }));
 }
 
-export function googleDirections(destination: Coordinates | string, origin?: Coordinates) {
+export function googleDirections(destination: Coordinates | string, origin: Coordinates) {
   const params = new URLSearchParams({
     api: '1',
     travelmode: 'driving',
+    origin: [origin[1], origin[0]].join(','),
     destination: typeof destination === 'string' ? destination : [destination[1], destination[0]].join(','),
   });
-  if (origin) params.set('origin', [origin[1], origin[0]].join(','));
   return 'https://www.google.com/maps/dir/?' + params.toString();
 }
 

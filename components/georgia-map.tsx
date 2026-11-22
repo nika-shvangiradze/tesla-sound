@@ -264,11 +264,16 @@ export default function GeorgiaMap() {
             {embeddedDirections && <button type="button" className="button primary" onClick={() => void buildRoute()} disabled={!origin || !destination || routing}>
               {t(routing ? 'Building route…' : 'Show driving route')}
             </button>}
-            {destination && <a className={embeddedDirections ? 'button' : 'button primary'}
-              href={googleDirections(destination.googleDestination ?? destination.point, origin ?? undefined)}
+            {destination && origin && <a className={embeddedDirections ? 'button' : 'button primary'}
+              href={googleDirections(destination.googleDestination ?? destination.point, origin)}
               target="_blank" rel="noopener noreferrer">{t('Directions in Google Maps')}</a>}
+            {destination && !origin && !embeddedDirections && <button type="button" className="button primary" disabled>
+              {t('Directions in Google Maps')}
+            </button>}
           </div>
-          {destination && !origin && <p className="map-note">{t('Use your location or choose a starting point on the map')}</p>}
+          {destination && !origin && !pickStart && <p className="map-note">{t(gpsOn
+            ? 'Wait for GPS or pick a starting point on the map'
+            : 'Use your location or choose a starting point on the map')}</p>}
           {routeMessage && <p className="map-note" role="status">{t(routeMessage)}</p>}
           {route && <p className="map-route-summary" role="status">
             {t('{distance} km · about {minutes} min', {

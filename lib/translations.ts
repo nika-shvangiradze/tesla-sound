@@ -98,6 +98,7 @@ const georgian: Readonly<Record<string, string>> = {
   'Search in Google Maps': 'ძებნა Google Maps-ში',
   'Find the address in Google Maps or tap the map to set a pin': 'მოძებნეთ მისამართი Google Maps-ში ან მონიშნეთ ადგილი რუკაზე',
   'Use your location or choose a starting point on the map': 'აირჩიეთ „ჩემი მდებარეობა“ ან მონიშნეთ საწყისი წერტილი რუკაზე',
+  'Wait for GPS or pick a starting point on the map': 'დაელოდეთ GPS სიგნალს ან მონიშნეთ საწყისი წერტილი რუკაზე',
   'Some map tiles could not load': 'რუკის ნაწილი ვერ ჩაიტვირთა',
   'GPS is unavailable in this browser': 'ამ ბრაუზერში GPS მიუწვდომელია',
   'Waiting for your location': 'მდებარეობის მოლოდინში',
