@@ -12,7 +12,7 @@ export type EngineMode = 'manual' | 'gps';
 type AudioStatus = 'off' | 'starting' | 'playing' | 'paused' | 'error';
 type Frame = { rpm: number; load: number; gear: SimulatedGear | null; speed: number | null; gpsStatus: string; shift: DriveTarget['shift'] };
 type Gps = { tracking: SpeedTracking | null; issue: string | null };
-type Session = { audio: EngineAudio; resuming: boolean; preferWorklet: boolean; started: boolean };
+type Session = { audio: EngineAudio; resuming: boolean; attemptedRecovery: boolean; preferWorklet: boolean; started: boolean };
 type Simulation = { rpm: number; last: number; lastDisplay: number; transmission: Transmission | null; voice: VoiceId; mode: EngineMode };
 
 const idleRpm = VEHICLES[DEFAULT_VOICE].engine.idleRpm;
@@ -80,18 +80,64 @@ export function useEngine() {
     }
   }, []);
 
-  useEffect(() => {
-    function suspendOnHide() {
-      if (document.hidden && session.current) stop();
+  const dispose = useCallback(() => {
+    const current = session.current;
+    session.current = null;
+    current?.audio.stop();
+  }, []);
+
+  const stop = useCallback(() => {
+    dispose();
+    controls.current.revUntil = 0;
+    step(true, controls.current.mode === 'manual');
+    setState('off');
+    setError('');
+  }, [dispose, step]);
+
+  const recoverAudio = useCallback(async (returning = false) => {
+    const current = session.current;
+    if (!current?.started || current.resuming || (!returning && current.attemptedRecovery)) return;
+    const audioState = current.audio.context.state;
+    if (audioState === 'running' || audioState === 'closed') return;
+    current.attemptedRecovery = true;
+    current.resuming = true;
+    try {
+      await current.audio.resume();
+    } catch {
+      // Keep the session available if the browser still owns the interruption.
+    } finally {
+      if (session.current === current) {
+        current.resuming = false;
+        const running = current.audio.context.state === 'running';
+        setState(running ? 'playing' : 'paused');
+        if (running) {
+          current.attemptedRecovery = false;
+          setError('');
+          step(true);
+        }
+      }
     }
-    window.addEventListener('pagehide', stop);
-    document.addEventListener('visibilitychange', suspendOnHide);
+  }, [step]);
+
+  useEffect(() => {
+    function onPageHide(event: PageTransitionEvent) {
+      if (!event.persisted) stop();
+    }
+    function onReturn() {
+      if (!document.hidden) void recoverAudio(true);
+    }
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('pageshow', onReturn);
+    window.addEventListener('focus', onReturn);
+    document.addEventListener('visibilitychange', onReturn);
     return () => {
-      window.removeEventListener('pagehide', stop);
-      document.removeEventListener('visibilitychange', suspendOnHide);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('pageshow', onReturn);
+      window.removeEventListener('focus', onReturn);
+      document.removeEventListener('visibilitychange', onReturn);
       dispose();
     };
-  }, []);
+  }, [dispose, recoverAudio, stop]);
 
   useEffect(() => {
     if (mode !== 'gps') return;
@@ -143,29 +189,18 @@ export function useEngine() {
     return () => window.clearInterval(timer);
   }, [active, mode, step]);
 
-  function dispose() {
-    const current = session.current;
-    session.current = null;
-    if (!current) return;
-    current.audio.stop();
-  }
-
-  function stop() {
-    dispose();
-    controls.current.revUntil = 0;
-    step(true, controls.current.mode === 'manual');
-    setState('off');
-    setError('');
-  }
-
   async function start() {
     let current = session.current;
     if (current?.resuming || current?.audio.context.state === 'running') return;
+    if (current?.audio.context.state === 'closed') {
+      dispose();
+      current = null;
+    }
     setError('');
     setState('starting');
     try {
       if (!current) {
-        current = { audio: new EngineAudio(controls.current.voice), resuming: false, preferWorklet, started: false };
+        current = { audio: new EngineAudio(controls.current.voice), resuming: false, attemptedRecovery: false, preferWorklet, started: false };
         session.current = current;
         setPath('standard');
       }
@@ -174,12 +209,20 @@ export function useEngine() {
       await starting.audio.resume();
       if (session.current !== starting) return;
       starting.resuming = false;
+      starting.attemptedRecovery = false;
       setState('playing');
       if (!starting.started) {
         starting.started = true;
         starting.audio.context.onstatechange = () => {
-          if (session.current === starting && !starting.resuming) {
-            setState(starting.audio.context.state === 'running' ? 'playing' : 'paused');
+          if (session.current !== starting || starting.resuming) return;
+          const running = starting.audio.context.state === 'running';
+          setState(running ? 'playing' : 'paused');
+          if (running) {
+            starting.attemptedRecovery = false;
+            setError('');
+            step(true);
+          } else {
+            void recoverAudio();
           }
         };
         if (starting.preferWorklet) void starting.audio.enableWorklet(setPath);
@@ -187,9 +230,14 @@ export function useEngine() {
       step(true);
     } catch (failure) {
       if (session.current !== current) return;
-      dispose();
-      step(true, controls.current.mode === 'manual');
-      setState('error');
+      if (current?.started && current.audio.context.state !== 'closed') {
+        current.resuming = false;
+        setState('paused');
+      } else {
+        dispose();
+        step(true, controls.current.mode === 'manual');
+        setState('error');
+      }
       setError(failure instanceof Error ? failure.message : 'Sound could not start.');
     }
   }

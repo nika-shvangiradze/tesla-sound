@@ -263,6 +263,10 @@ export class EngineAudio {
     this.disposed = true;
     const { context } = this;
     context.onstatechange = null;
+    if (context.state === 'closed') {
+      this.disconnectWorklet();
+      return;
+    }
     const time = context.currentTime;
     this.master.gain.cancelScheduledValues(time);
     this.master.gain.setTargetAtTime(0, time, 0.008);
