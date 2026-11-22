@@ -216,7 +216,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   gaz24: {
-    make: 'GAZ', model: 'Nugzara 24', variant: 'GAZ-24 Volga · ZMZ-24D', originCountry: 'Russia',
+    make: 'GAZ', model: 'Nugzara\'s 24', variant: 'GAZ-24 Volga · ZMZ-24D', originCountry: 'Russia',
     engine: { idleRpm: 650, redlineRpm: 4_700, limiterRpm: 5_000, responseSeconds: 0.30, revBlipRpm: 3_000 },
     gearbox: {
       type: 'manual', name: 'GAZ', ratios: [3.5, 2.26, 1.45, 1],

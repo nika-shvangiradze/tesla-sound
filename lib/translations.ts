@@ -143,7 +143,7 @@ const georgian: Readonly<Record<string, string>> = {
   'S85 V10 rasp with a sharp upper-RPM howl': 'S85 V10-ის ხრინწიანი ხმა და მკვეთრი ჟღერადობა მაღალ ბრუნზე',
   'A80 inline-six, progressive twin-turbo spool and lift-off hiss': 'A80-ის რიგითი ექვსცილინდრიანი ძრავი, ტურბოების მზარდი სტვენა და შიშინი გაზის აშვებისას',
   'S54 inline-six intake growl and metallic exhaust rasp': 'რიგითი ექვსცილინდრიანი S54-ის გუგუნი და გამონაბოლქვის მეტალისებრი ხმა',
-  'Nugzara 24': 'ნუგზარას 24',
+  'Nugzara\'s 24': 'ნუგზარას 24',
   'GAZ-24 Volga · ZMZ-24D': 'GAZ-24 ვოლგა · ZMZ-24D',
   'Muted carbureted four-cylinder with a gentle, pulsing exhaust': 'კარბურატორიანი ოთხცილინდრიანი ძრავის რბილი, რიტმული ბუბუნი',
   'Unlock GPS Drive': 'GPS რეჟიმის გააქტიურება',
