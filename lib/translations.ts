@@ -72,7 +72,6 @@ const georgian: Readonly<Record<string, string>> = {
   'Next': 'შემდეგი',
   'Could not load accounts': 'მომხმარებლები ვერ ჩაიტვირთა',
   'Could not update the account': 'ანგარიში ვერ განახლდა',
-  'V8 GPS Edition': 'V8 GPS რეჟიმი',
   'GPS Diagnostic': 'GPS დიაგნოსტიკა',
   'Start Sound': 'ხმის ჩართვა',
   'Resume Sound': 'ხმის გაგრძელება',

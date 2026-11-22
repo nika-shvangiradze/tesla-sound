@@ -20,7 +20,7 @@ export default function SiteHeader({ page }: { page: 'engine' | 'diagnostic' | '
       <nav className={`site-nav${showAdmin && showProfile ? ' site-nav-admin' : ''}${!showAdmin && !showProfile ? ' site-nav-profile' : ''}`} aria-label={t('Main navigation')}>
         {page === 'engine'
           ? <Link className="button site-section" href="/diagnostic/">{t('GPS Diagnostic')}</Link>
-          : <Link className="button site-section" href="/">{t('V8 GPS Edition')}</Link>}
+          : <Link className="button site-section" href="/">{t('GPS Drive')}</Link>}
         <AccountMenu showAdmin={showAdmin} showProfile={showProfile} />
       </nav>
     </header>
