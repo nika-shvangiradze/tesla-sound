@@ -7,7 +7,7 @@ import { AccountGate, AccountProvider } from '../components/account';
 import { LanguageProvider } from '../components/language';
 
 export const metadata: Metadata = {
-  title: 'VoltSound | V8 GPS Edition',
+  title: 'voltroar',
   description: 'სინთეზირებული ძრავის ხმები, ბრუნის ხელით მართვა და GPS რეჟიმი მანქანის ბრაუზერისთვის',
 };
 
