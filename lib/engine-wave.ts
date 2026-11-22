@@ -2,7 +2,7 @@ export const REFERENCE_RPM = 1_600;
 export const LOOP_CYCLES = 4;
 
 export type EngineVoice = {
-  description: string;
+  description: string | null;
   banks: readonly number[];
   pulseStrength: readonly number[];
   timing: readonly number[];
@@ -25,7 +25,7 @@ const ALTERNATING_SIX_BANKS = [0, 1, 0, 1, 0, 1];
 
 export const ENGINE_VOICES = {
   shelby: {
-    description: 'Deep, loping big-block rumble',
+    description: null,
     banks: CROSS_PLANE_BANKS,
     pulseStrength: [1.12, 0.83, 1.09, 0.89, 1.04, 0.91, 1.13, 0.81],
     timing: [0, 0.003, -0.004, 0.006, -0.002, 0.001, -0.004, 0.004],

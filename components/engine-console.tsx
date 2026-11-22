@@ -119,7 +119,7 @@ export default function EngineConsole() {
                     );
                   })}
                 </div>
-                <p className="voice-description">{t(voice.description)}</p>
+                {voice.description && <p className="voice-description">{t(voice.description)}</p>}
               </fieldset>
               <div className="mode-picker" aria-label={t('Engine mode')} role="group">
                 <button className="button" aria-pressed={mode === 'manual'} onClick={() => engine.setMode('manual')}>{t('Manual Mode')}</button>
