@@ -82,7 +82,7 @@ const georgian: Readonly<Record<string, string>> = {
   'Below the vehicle list, tap “{button}” and allow location access if prompted': 'მანქანების სიის ქვემოთ დააჭირეთ „{button}“. თუ ბრაუზერი მოგთხოვთ, მიეცით მდებარეობაზე წვდომა',
   'Wait for the GPS signal. As you drive, the synthesized engine sound follows your speed': 'დაელოდეთ GPS სიგნალს. მოძრაობისას სინთეზირებული ძრავის ხმა სიჩქარეს აჰყვება',
   'An active plan is required for GPS Drive. While moving, let a passenger operate the screen': 'GPS რეჟიმისთვის საჭიროა აქტიური პაკეტი. მოძრაობისას ეკრანი მგზავრმა მართოს',
-  'You can play music on your phone while listening to the engine sound. If Tesla switches audio sources when you use Bluetooth, play the music through your phone’s speaker': 'ძრავის ხმის მოსმენისას შეგიძლიათ ტელეფონზე მუსიკაც ჩართოთ. თუ Bluetooth-ით დაკვრისას Tesla აუდიოს წყაროს გადართავს, მუსიკა ტელეფონის დინამიკით დაუკარით',
+  'You can play music on your phone while listening to the engine sound': 'ძრავის ხმის მოსმენისას შეგიძლიათ ტელეფონზე მუსიკაც ჩართოთ',
   'Engine instruments': 'ძრავის მაჩვენებლები',
   'Sound off': 'ხმა გამორთულია',
   'Starting audio': 'ხმა ირთვება',

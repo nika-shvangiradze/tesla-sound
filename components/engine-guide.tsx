@@ -26,7 +26,7 @@ export default function EngineGuide() {
             <li>{t('Wait for the GPS signal. As you drive, the synthesized engine sound follows your speed')}</li>
           </ol>
           <p>{t('An active plan is required for GPS Drive. While moving, let a passenger operate the screen')}</p>
-          <p>{t('You can play music on your phone while listening to the engine sound. If Tesla switches audio sources when you use Bluetooth, play the music through your phone’s speaker')}</p>
+          <p>{t('You can play music on your phone while listening to the engine sound')}</p>
         </div>
       </dialog>
     </>
