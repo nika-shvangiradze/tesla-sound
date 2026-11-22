@@ -7,6 +7,7 @@ export default function DiscordLink() {
   return (
     <a className="button discord-link" href="https://discord.gg/8KnFEuE6p" target="_blank" rel="noopener noreferrer">
       {t('Suggest an idea on Discord')}
+      <img className="messenger-icon" src="/icons/discord.svg" width={17} height={17} alt="" />
     </a>
   );
 }

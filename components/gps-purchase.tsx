@@ -54,10 +54,19 @@ export default function GpsPurchase({ phone, onClose }: { phone: string; onClose
           <h3 id="purchase-contact">{t('Choose a messaging app')}</h3>
           <div className="purchase-channels">
             <a className="button purchase-whatsapp" href={`https://wa.me/${SUPPORT_PHONE.slice(1)}?text=${text}`}
-              target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            <a className="button purchase-viber" href={`viber://chat?number=${encodeURIComponent(SUPPORT_PHONE)}`}>Viber</a>
+              target="_blank" rel="noopener noreferrer">
+              <img className="messenger-icon" src="/icons/whatsapp.svg" width={17} height={17} alt="" />
+              WhatsApp
+            </a>
+            <a className="button purchase-viber" href={`viber://chat?number=${encodeURIComponent(SUPPORT_PHONE)}`}>
+              <img className="messenger-icon" src="/icons/viber.svg" width={17} height={17} alt="" />
+              Viber
+            </a>
             <a className="button purchase-telegram" href={`https://t.me/${SUPPORT_PHONE}?text=${text}`}
-              target="_blank" rel="noopener noreferrer">Telegram</a>
+              target="_blank" rel="noopener noreferrer">
+              <img className="messenger-icon" src="/icons/telegram.svg" width={17} height={17} alt="" />
+              Telegram
+            </a>
           </div>
           <details className="purchase-draft">
             <summary>{t('Prepared message')}</summary>

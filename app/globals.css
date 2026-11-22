@@ -168,6 +168,7 @@ footer { padding: 17px 0 20px; color: var(--muted); font-size: 13px; flex-wrap: 
 .button.discord-link { color: #dde2ff; border-color: #525e91; background: #222d4a; min-height: 44px; text-align: center; }
 .button.discord-link:hover { color: #fff; border-color: #8190d3; background: #303e67; }
 .account-card .discord-link { width: 100%; margin-top: 14px; }
+.messenger-icon { flex-shrink: 0; }
 
 @media (max-width: 820px) {
   .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
