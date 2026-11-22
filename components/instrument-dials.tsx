@@ -71,11 +71,11 @@ export default function InstrumentDials({ voice, rpm, speed }: { voice: VoiceId;
   const { t } = useLanguage();
   const vehicle = VEHICLES[voice];
   const { cluster, engine, make, model, variant } = vehicle;
-  const speedValue = speed === null ? null : displaySpeed(speed, cluster.speed.unit);
-  const units = t(cluster.speed.unit);
-  const speedometer = cluster.speed.scale
-    ? <Dial kind="speed" scale={cluster.speed.scale} value={speedValue} units={units} />
-    : <div className="digital-speed"><span>{t('GPS speed')}</span><Readout value={speedValue} units={units} /></div>;
+  const { unit, scale } = cluster.speed;
+  const speedValue = speed === null ? null : displaySpeed(speed, unit);
+  const speedometer = scale
+    ? <Dial kind="speed" scale={scale} value={speedValue} units={unit} />
+    : <div className="digital-speed"><span>{t('GPS speed')}</span><Readout value={speedValue} units={unit} /></div>;
   const tachometer = <Dial kind="rpm" scale={cluster.tach} redline={engine.redlineRpm} value={rpm} units="RPM" />;
   const tachFirst = cluster.layout === 'tach-first';
   return (
