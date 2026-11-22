@@ -136,7 +136,7 @@ export default function EngineConsole() {
                 </div>
               ) : (
                 <div className="mode-controls drive-explanation">
-                  <p>{t('Measured GPS speed drives automatic gear simulation. The engine returns to idle during a GPS gap')}</p>
+                  <p>{t('Measured GPS speed drives automatic gear simulation')}</p>
                 </div>
               )}
               <div className="volume-controls">

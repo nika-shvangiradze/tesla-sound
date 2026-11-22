@@ -113,7 +113,7 @@ const georgian: Readonly<Record<string, string>> = {
   'GPS Drive': 'GPS რეჟიმი',
   'Target RPM': 'სასურველი ბრუნი',
   'Rev': 'გაზის მიცემა',
-  'Measured GPS speed drives automatic gear simulation. The engine returns to idle during a GPS gap': 'გაზომილი GPS სიჩქარით გადაცემები ავტომატურად გამოითვლება. სიგნალის დაკარგვისას ძრავი უქმ სვლას უბრუნდება',
+  'Measured GPS speed drives automatic gear simulation': 'გაზომილი GPS სიჩქარით გადაცემები ავტომატურად გამოითვლება',
   'Volume': 'ხმის სიმძლავრე',
   'Try AudioWorklet': 'AudioWorklet-ის გამოყენება',
   'GPS Drive access could not be verified. Try again': 'GPS რეჟიმზე წვდომა ვერ შემოწმდა. სცადე ხელახლა',
