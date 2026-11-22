@@ -10,6 +10,7 @@ import SiteHeader from './site-header';
 import { useLanguage } from './language';
 import GpsPurchase from './gps-purchase';
 import DiscordLink from './discord-link';
+import EngineGuide from './engine-guide';
 import { hasGpsAccess } from '../lib/account-plans';
 
 export default function EngineConsole() {
@@ -67,6 +68,7 @@ export default function EngineConsole() {
             <button className="button" onClick={engine.stop} disabled={!active}>
               <span className="stop-icon" aria-hidden="true" />{t('Stop Sound')}
             </button>
+            <EngineGuide />
           </div>
         </div>
 
