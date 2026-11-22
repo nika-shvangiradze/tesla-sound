@@ -13,7 +13,7 @@
   background: var(--background);
 }
 .map-search input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.map-results { display: grid; gap: 5px; }
+.map-results, .map-search-fallback { display: grid; gap: 5px; }
 .map-results .button { width: 100%; justify-content: flex-start; text-align: start; }
 .map-start-actions, .map-route-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 .map-sidebar .button { min-height: 44px; padding-inline: 10px; }
@@ -25,12 +25,12 @@
 .map-endpoints dd { overflow-wrap: anywhere; }
 .map-route-summary, .map-provider { color: var(--accent); }
 .map-provider { width: fit-content; font-size: .8rem; text-decoration: underline; }
-.map-view { min-width: 0; border-inline-start: 1px solid var(--line); }
+.map-view { display: flex; flex-direction: column; min-width: 0; border-inline-start: 1px solid var(--line); }
 .map-view > .map-note { padding: 8px 12px; }
-.map-canvas { position: relative; z-index: 0; height: clamp(330px, 59vh, 690px); isolation: isolate; background: #dfe7ea; }
+.map-canvas { position: relative; z-index: 0; flex: 1; min-height: clamp(330px, 59vh, 690px); isolation: isolate; background: #dfe7ea; }
 .map-canvas .leaflet-control-zoom a { width: 40px; height: 40px; line-height: 40px; }
 @media (max-width: 735px) {
   .georgia-map-body { grid-template-columns: minmax(0, 1fr); }
   .map-view { border-inline-start: 0; border-top: 1px solid var(--line); }
-  .map-canvas { height: clamp(300px, 49vh, 470px); }
+  .map-canvas { min-height: clamp(300px, 49vh, 470px); }
 }

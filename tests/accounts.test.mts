@@ -55,6 +55,10 @@ test('account and administrator flow covers password changes, GPS access, and de
   assert.equal(account.phone, phone);
   assert.equal(hasGpsAccess(account), false);
   assert.equal(account.planActivatedAt, null);
+  assert.equal((await issue({ action: 'map-status' })).status, 401);
+  const mapStatus = await issue({ action: 'map-status' }, userCookie);
+  assert.equal(mapStatus.status, 200);
+  assert.deepEqual(await mapStatus.json(), { embeddedDirections: Boolean(process.env.HEIGIT_API_KEY?.trim()) });
   assert.deepEqual(Object.keys(account).sort(), ['createdAt', 'gpsUntil', 'phone', 'plan', 'planActivatedAt', 'role']);
   assert.equal((await issue({ action: 'list' }, userCookie)).status, 403);
   assert.equal((await issue({ action: 'list' }, '', 'https://foreign.example')).status, 403);

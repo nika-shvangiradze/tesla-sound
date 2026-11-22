@@ -198,6 +198,9 @@ export async function handleAccount(req: Request, store: AccountStore, ip: strin
       return reply({ account: null, serverTime: now }, 200, cookie.format('', 0));
     }
     if (!account) throw new ApiError(401, 'Sign in to continue.');
+    if (action === 'map-status') {
+      return reply({ embeddedDirections: Boolean(process.env.HEIGIT_API_KEY?.trim()) });
+    }
     if (action === 'map-search' || action === 'map-route') {
       const key = process.env.HEIGIT_API_KEY?.trim();
       if (!key) throw new ApiError(503, 'Built-in directions and address search are awaiting setup');

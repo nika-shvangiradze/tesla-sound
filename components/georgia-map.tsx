@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { findGeorgianCities, googleDirections, isCoordinates } from '../lib/georgia-map';
+import { findGeorgianPlaces, googleDirections, googlePlaceSearch, isCoordinates } from '../lib/georgia-map';
 import type { Coordinates, DrivingRoute, MapPlace } from '../lib/georgia-map';
 import { accountRequest } from './account';
 import { useLanguage } from './language';
@@ -16,6 +16,7 @@ export default function GeorgiaMap() {
   const canvas = useRef<HTMLDivElement>(null);
   const layers = useRef<{ map: L.Map; start: L.CircleMarker; end: L.CircleMarker; route: L.Polyline } | null>(null);
   const gpsWatch = useRef<number | null>(null);
+  const searchRequest = useRef(0);
   const routeRequest = useRef(0);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MapPlace[]>([]);
@@ -25,11 +26,21 @@ export default function GeorgiaMap() {
   const [gpsOn, setGpsOn] = useState(false);
   const [gpsMessage, setGpsMessage] = useState('');
   const [searchMessage, setSearchMessage] = useState('');
+  const [externalQuery, setExternalQuery] = useState('');
+  const [embeddedDirections, setEmbeddedDirections] = useState(false);
   const [routeMessage, setRouteMessage] = useState('');
   const [origin, setOrigin] = useState<Coordinates | null>(null);
   const [destination, setDestination] = useState<MapPlace | null>(null);
   const [route, setRoute] = useState<DrivingRoute | null>(null);
   const [tilesFailed, setTilesFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void accountRequest<{ embeddedDirections: boolean }>({ action: 'map-status' })
+      .then((status) => { if (active) setEmbeddedDirections(status.embeddedDirections); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -48,7 +59,11 @@ export default function GeorgiaMap() {
       end: L.circleMarker([0, 0], { color: '#fff', fillColor: '#d34c50', fillOpacity: 1, radius: 8 }),
       route: L.polyline([], { color: '#176ed1', weight: 6, opacity: 0.9 }).addTo(map),
     };
+    const resize = typeof ResizeObserver === 'undefined' ? null
+      : new ResizeObserver(() => { map.invalidateSize({ pan: false }); });
+    resize?.observe(canvas.current);
     return () => {
+      resize?.disconnect();
       layers.current = null;
       map.remove();
     };
@@ -82,7 +97,13 @@ export default function GeorgiaMap() {
         setOrigin(point);
         setPickStart(false);
       } else {
+        searchRequest.current += 1;
+        setSearching(false);
         setDestination({ label: '', point });
+        setQuery('');
+        setResults([]);
+        setSearchMessage('');
+        setExternalQuery('');
       }
       clearRoute();
     };
@@ -98,8 +119,9 @@ export default function GeorgiaMap() {
 
   useEffect(() => {
     const view = layers.current;
-    if (!view || !destination) return;
-    view.end.setLatLng(toLatLng(destination.point)).addTo(view.map);
+    if (!view) return;
+    if (destination) view.end.setLatLng(toLatLng(destination.point)).addTo(view.map);
+    else view.end.remove();
   }, [destination]);
 
   useEffect(() => {
@@ -127,7 +149,11 @@ export default function GeorgiaMap() {
       if (gpsWatch.current === null || !isCoordinates(point)) return;
       setOrigin(point);
       setGpsMessage('Live location');
-      if (firstFix) layers.current?.map.setView(toLatLng(point), 14);
+      if (firstFix && layers.current) {
+        const { map, end } = layers.current;
+        if (map.hasLayer(end)) map.fitBounds(L.latLngBounds(toLatLng(point), end.getLatLng()), { padding: [35, 35], maxZoom: 15 });
+        else map.setView(toLatLng(point), 14);
+      }
       firstFix = false;
     }, (error) => {
       if (gpsWatch.current === null) return;
@@ -139,23 +165,34 @@ export default function GeorgiaMap() {
   async function searchPlaces() {
     const term = query.trim();
     if (term.length < 2) return;
-    const cities = findGeorgianCities(term, language);
-    setResults(cities);
+    setDestination(null);
+    clearRoute();
+    const places = findGeorgianPlaces(term, language);
+    setResults(places);
     setSearchMessage('');
+    setExternalQuery('');
+    if (places.length || !embeddedDirections) {
+      if (!places.length) setExternalQuery(term);
+      return;
+    }
+    const request = ++searchRequest.current;
     setSearching(true);
     try {
-      const { places } = await accountRequest<{ places: MapPlace[] }>({ action: 'map-search', query: term });
-      setResults(places.length ? places : cities);
-      if (!places.length && !cities.length) setSearchMessage('No places found. Try another name or tap the map');
+      const result = await accountRequest<{ places: MapPlace[] }>({ action: 'map-search', query: term });
+      if (request !== searchRequest.current) return;
+      setResults(result.places);
+      if (!result.places.length) setExternalQuery(term);
     } catch {
-      if (!cities.length) setSearchMessage('No matching city in the starter list. You can tap the map');
+      if (request !== searchRequest.current) return;
+      setSearchMessage('Map search is temporarily unavailable');
+      setExternalQuery(term);
     } finally {
-      setSearching(false);
+      if (request === searchRequest.current) setSearching(false);
     }
   }
 
   async function buildRoute() {
-    if (!origin || !destination || routing) return;
+    if (!origin || !destination || routing || !embeddedDirections) return;
     const request = ++routeRequest.current;
     setRouteMessage('');
     setRouting(true);
@@ -179,8 +216,12 @@ export default function GeorgiaMap() {
           <form className="map-search" onSubmit={(event) => { event.preventDefault(); void searchPlaces(); }}>
             <label htmlFor="map-place">{t('Find a place in Georgia')}</label>
             <div className="map-search-row">
-              <input id="map-place" value={query} onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('e.g. Batumi')} maxLength={120} disabled={searching} />
+              <input id="map-place" value={query} onChange={(event) => {
+                setQuery(event.target.value);
+                setResults([]);
+                setSearchMessage('');
+                setExternalQuery('');
+              }} placeholder={t('e.g. airport or Batumi')} maxLength={120} disabled={searching} />
               <button className="button" disabled={searching || query.trim().length < 2}>{t('Search')}</button>
             </div>
           </form>
@@ -190,11 +231,20 @@ export default function GeorgiaMap() {
                 clearRoute();
                 setPickStart(false);
                 setDestination(place);
+                setQuery(place.label);
                 setResults([]);
-                layers.current?.map.setView(toLatLng(place.point), 13);
+                const map = layers.current?.map;
+                if (origin) map?.fitBounds([toLatLng(origin), toLatLng(place.point)], { padding: [35, 35], maxZoom: 15 });
+                else map?.setView(toLatLng(place.point), 14);
               }}>{place.label}</button>
             </li>)}
           </ul>}
+          {externalQuery && <div className="map-search-fallback">
+            <p className="map-note">{t('Find the address in Google Maps or tap the map to set a pin')}</p>
+            <a className="button" href={googlePlaceSearch(externalQuery)} target="_blank" rel="noopener noreferrer">
+              {t('Search in Google Maps')}
+            </a>
+          </div>}
           <div className="map-start-actions">
             <button type="button" className="button" onClick={gpsOn ? stopGps : startGps}>{t(gpsOn ? 'Stop location' : 'Use my location')}</button>
             <button type="button" className="button" aria-pressed={pickStart} onClick={() => {
@@ -207,16 +257,18 @@ export default function GeorgiaMap() {
           {gpsMessage && <p className="map-note" role="status">{t(gpsMessage)}</p>}
           {searchMessage && <p className="map-note" role="status">{t(searchMessage)}</p>}
           <dl className="map-endpoints">
-            <div><dt>{t('Starting point')}</dt><dd>{origin ? t('Selected') : '—'}</dd></div>
+            <div><dt>{t('Starting point')}</dt><dd>{origin ? t(gpsOn ? 'My location' : 'Selected point') : '—'}</dd></div>
             <div><dt>{t('Destination')}</dt><dd>{destination ? destination.label || t('Map pin') : '—'}</dd></div>
           </dl>
           <div className="map-route-actions">
-            <button type="button" className="button primary" onClick={() => void buildRoute()} disabled={!origin || !destination || routing}>
+            {embeddedDirections && <button type="button" className="button primary" onClick={() => void buildRoute()} disabled={!origin || !destination || routing}>
               {t(routing ? 'Building route…' : 'Show driving route')}
-            </button>
-            {destination && <a className="button" href={googleDirections(destination.point, origin ?? undefined)}
-              target="_blank" rel="noopener noreferrer">{t('Open in Google Maps')}</a>}
+            </button>}
+            {destination && <a className={embeddedDirections ? 'button' : 'button primary'}
+              href={googleDirections(destination.googleDestination ?? destination.point, origin ?? undefined)}
+              target="_blank" rel="noopener noreferrer">{t('Directions in Google Maps')}</a>}
           </div>
+          {destination && !origin && <p className="map-note">{t('Use your location or choose a starting point on the map')}</p>}
           {routeMessage && <p className="map-note" role="status">{t(routeMessage)}</p>}
           {route && <p className="map-route-summary" role="status">
             {t('{distance} km · about {minutes} min', {
@@ -224,8 +276,10 @@ export default function GeorgiaMap() {
               minutes: Math.max(1, Math.round(route.duration / 60)),
             })}
           </p>}
-          <p className="map-note">{t('Searching and building a route send the query or selected points to the map provider')}</p>
-          <a className="map-provider" href="https://openrouteservice.org/" target="_blank" rel="noopener noreferrer">openrouteservice by HeiGIT</a>
+          {embeddedDirections && <>
+            <p className="map-note">{t('Searching and building a route send the query or selected points to the map provider')}</p>
+            <a className="map-provider" href="https://openrouteservice.org/" target="_blank" rel="noopener noreferrer">openrouteservice by HeiGIT</a>
+          </>}
         </div>
         <div className="map-view">
           <div className="map-canvas" ref={canvas} aria-label={t('Map of Georgia')} />
