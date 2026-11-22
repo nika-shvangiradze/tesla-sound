@@ -124,6 +124,7 @@ const georgian: Readonly<Record<string, string>> = {
   'GPS timed out': 'GPS-ის ლოდინის დრო ამოიწურა',
   'GPS position unavailable': 'GPS-ის მდებარეობა მიუწვდომელია',
   'Could not start GPS': 'GPS ვერ ჩაირთო',
+  'Low, rhythmic tone of a classic American V8': 'კლასიკური ამერიკული V8-ის დაბალი, რიტმული ჟღერადობა',
   'Tight pulses and a brighter exhaust note': 'სწრაფი პულსები და გამონაბოლქვის მკვეთრი ხმა',
   'High-revving flat-plane V8': 'მაღალ ბრუნზე მომუშავე V8 ბრტყელი მუხლა ლილვით',
   'Metallic flat-six exhaust note': 'ოპოზიტური ექვსცილინდრიანი ძრავის მეტალისებრი ხმა',
