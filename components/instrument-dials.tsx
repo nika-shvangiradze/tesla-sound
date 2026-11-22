@@ -70,7 +70,7 @@ function Dial({ kind, value, scale, units, redline }: {
 export default function InstrumentDials({ voice, rpm, speed }: { voice: VoiceId; rpm: number; speed: number | null }) {
   const { t } = useLanguage();
   const vehicle = VEHICLES[voice];
-  const { cluster, engine, make, model, variant } = vehicle;
+  const { cluster, engine, make, model, variant, originCountry } = vehicle;
   const { unit, scale } = cluster.speed;
   const speedValue = speed === null ? null : displaySpeed(speed, unit);
   const speedometer = scale
@@ -80,7 +80,7 @@ export default function InstrumentDials({ voice, rpm, speed }: { voice: VoiceId;
   const tachFirst = cluster.layout === 'tach-first';
   return (
     <div className="instrument-cluster" data-voice={voice} data-layout={cluster.layout} data-needle={cluster.needle}>
-      <p className="cluster-model"><span>{make}</span> {t(model)}<small>{t(variant)}</small></p>
+      <p className="cluster-model"><span>{make}</span> {t(model)}<small>{t(variant)} · {t(originCountry)}</small></p>
       <div className="instrument-dials">
         {tachFirst ? tachometer : speedometer}
         {tachFirst ? speedometer : tachometer}

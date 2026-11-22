@@ -19,6 +19,7 @@ export type VehicleProfile = {
   make: string;
   model: string;
   variant: string;
+  originCountry: 'United States' | 'Germany' | 'Italy' | 'Japan' | 'Russia';
   engine: { idleRpm: number; redlineRpm: number; limiterRpm: number; responseSeconds: number; revBlipRpm?: number };
   gearbox: {
     type: TransmissionType;
@@ -54,7 +55,7 @@ const TORQUEFLITE = [4.71, 3.14, 2.10, 1.67, 1.29, 1, 0.84, 0.67];
 // Variant-specific sources and the status of each approximation are listed in README.md.
 export const VEHICLES: Record<VoiceId, VehicleProfile> = {
   shelby: {
-    make: 'Shelby', model: 'GT500 ’70', variant: '1970 SportsRoof · US',
+    make: 'Shelby', model: 'GT500 ’70', variant: '1970 SportsRoof', originCountry: 'United States',
     engine: { idleRpm: 780, redlineRpm: 5_500, limiterRpm: 6_000, responseSeconds: 0.19 },
     gearbox: {
       type: 'manual', name: 'Ford Toploader', ratios: [2.32, 1.69, 1.29, 1],
@@ -67,7 +68,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   c63: {
-    make: 'Mercedes-AMG', model: 'C63 W204', variant: '2008 Sedan · EU',
+    make: 'Mercedes-AMG', model: 'C63 W204', variant: '2008 Sedan', originCountry: 'Germany',
     engine: { idleRpm: 750, redlineRpm: 7_000, limiterRpm: 7_200, responseSeconds: 0.14 },
     gearbox: {
       type: 'automatic', name: 'AMG SPEEDSHIFT PLUS 7G-TRONIC', ratios: [4.38, 2.86, 1.92, 1.37, 1, 0.82, 0.73],
@@ -80,7 +81,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   ferrari: {
-    make: 'Ferrari', model: '458 Italia', variant: '2010 Coupé · EU',
+    make: 'Ferrari', model: '458 Italia', variant: '2010 Coupé', originCountry: 'Italy',
     engine: { idleRpm: 900, redlineRpm: 9_000, limiterRpm: 9_000, responseSeconds: 0.095 },
     gearbox: {
       type: 'dual-clutch', name: 'F1 DCT', ratios: [3.077, 2.185, 1.626, 1.286, 1.028, 0.839, 0.693],
@@ -93,7 +94,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   porsche: {
-    make: 'Porsche', model: '911 GT3', variant: '2025 992.2 · EU',
+    make: 'Porsche', model: '911 GT3', variant: '2025 992.2', originCountry: 'Germany',
     engine: { idleRpm: 850, redlineRpm: 9_000, limiterRpm: 9_000, responseSeconds: 0.10 },
     gearbox: {
       type: 'dual-clutch', name: 'PDK', ratios: [3.75, 2.38, 1.72, 1.34, 1.11, 0.96, 0.84],
@@ -106,7 +107,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   hellcat: {
-    make: 'Dodge', model: 'Challenger SRT Hellcat', variant: '2018 Standard Body · Canada',
+    make: 'Dodge', model: 'Challenger SRT Hellcat', variant: '2018 Standard Body', originCountry: 'United States',
     engine: { idleRpm: 750, redlineRpm: 6_200, limiterRpm: 6_200, responseSeconds: 0.15 },
     gearbox: {
       type: 'automatic', name: 'TorqueFlite 8HP90', ratios: TORQUEFLITE,
@@ -119,7 +120,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   countach: {
-    make: 'Lamborghini', model: 'Countach 5000 QV', variant: '1985 Carbureted · Europe',
+    make: 'Lamborghini', model: 'Countach 5000 QV', variant: '1985 Carbureted', originCountry: 'Italy',
     engine: { idleRpm: 900, redlineRpm: 7_400, limiterRpm: 7_600, responseSeconds: 0.17 },
     gearbox: {
       type: 'manual', name: 'Lamborghini', ratios: [2.232, 1.625, 1.088, 0.858, 0.707],
@@ -132,7 +133,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   huracan: {
-    make: 'Lamborghini', model: 'Huracán Performante', variant: '2018 Coupé · US',
+    make: 'Lamborghini', model: 'Huracán Performante', variant: '2018 Coupé', originCountry: 'Italy',
     engine: { idleRpm: 850, redlineRpm: 8_500, limiterRpm: 8_500, responseSeconds: 0.10 },
     gearbox: {
       type: 'dual-clutch', name: 'LDF', ratios: [2.76, 1.89, 1.45, 1.13, 0.91, 0.72, 0.57],
@@ -145,7 +146,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   demon: {
-    make: 'Dodge', model: 'Challenger SRT Demon', variant: '2018 SRT Demon · Canada',
+    make: 'Dodge', model: 'Challenger SRT Demon', variant: '2018 SRT Demon', originCountry: 'United States',
     engine: { idleRpm: 750, redlineRpm: 6_300, limiterRpm: 6_500, responseSeconds: 0.14 },
     gearbox: {
       type: 'automatic', name: 'TorqueFlite 8HP90', ratios: TORQUEFLITE,
@@ -158,7 +159,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   subaru: {
-    make: 'Subaru', model: 'Impreza WRX STI', variant: '2005 GD Sedan · Canada',
+    make: 'Subaru', model: 'Impreza WRX STI', variant: '2005 GD Sedan', originCountry: 'Japan',
     engine: { idleRpm: 750, redlineRpm: 7_000, limiterRpm: 7_200, responseSeconds: 0.155 },
     gearbox: {
       type: 'manual', name: 'STI 6MT', ratios: [3.636, 2.375, 1.761, 1.346, 0.971, 0.756],
@@ -171,7 +172,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   m5: {
-    make: 'BMW', model: 'M5 E60 V10', variant: '2005 E60 Sedan · EU',
+    make: 'BMW', model: 'M5 E60 V10', variant: '2005 E60 Sedan', originCountry: 'Germany',
     engine: { idleRpm: 750, redlineRpm: 8_000, limiterRpm: 8_250, responseSeconds: 0.11 },
     gearbox: {
       type: 'automated-manual', name: 'SMG III Drivelogic', ratios: [3.985, 2.652, 1.806, 1.392, 1.159, 1, 0.833],
@@ -189,7 +190,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   supra: {
-    make: 'Toyota', model: 'Supra 2JZ-GTE', variant: '1993 A80 Turbo · UK',
+    make: 'Toyota', model: 'Supra 2JZ-GTE', variant: '1993 A80 Turbo', originCountry: 'Japan',
     engine: { idleRpm: 750, redlineRpm: 6_800, limiterRpm: 7_000, responseSeconds: 0.14 },
     gearbox: {
       type: 'manual', name: 'Getrag V160', ratios: [3.827, 2.360, 1.685, 1.312, 1, 0.793],
@@ -202,7 +203,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   m3: {
-    make: 'BMW', model: 'M3 E46 S54', variant: '2001 Coupé · EU',
+    make: 'BMW', model: 'M3 E46 S54', variant: '2001 Coupé', originCountry: 'Germany',
     engine: { idleRpm: 800, redlineRpm: 8_000, limiterRpm: 8_000, responseSeconds: 0.115 },
     gearbox: {
       type: 'manual', name: 'Getrag 420G', ratios: [4.227, 2.528, 1.669, 1.226, 1, 0.828],
@@ -215,7 +216,7 @@ export const VEHICLES: Record<VoiceId, VehicleProfile> = {
     },
   },
   gaz24: {
-    make: 'GAZ', model: 'Nugzara 24', variant: 'GAZ-24 Volga · ZMZ-24D',
+    make: 'GAZ', model: 'Nugzara 24', variant: 'GAZ-24 Volga · ZMZ-24D', originCountry: 'Russia',
     engine: { idleRpm: 650, redlineRpm: 4_700, limiterRpm: 5_000, responseSeconds: 0.30, revBlipRpm: 3_000 },
     gearbox: {
       type: 'manual', name: 'GAZ', ratios: [3.5, 2.26, 1.45, 1],
