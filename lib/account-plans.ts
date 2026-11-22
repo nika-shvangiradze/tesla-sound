@@ -18,6 +18,7 @@ export type AccountView = {
   createdAt: number;
   gpsUntil: number | null;
   plan: PlanId | null;
+  planActivatedAt: number | null;
 };
 
 export function hasGpsAccess(account: AccountView | null, now = Date.now()) {

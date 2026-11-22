@@ -28,6 +28,7 @@ type AccountContextValue = {
   ready: boolean;
   error: string;
   gpsEnabled: boolean;
+  now: number;
   refresh: () => Promise<SessionResult>;
   submit: (data: Record<string, unknown>) => Promise<SessionResult>;
 };
@@ -105,7 +106,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   return (
     <SessionContext.Provider value={{
       account, ready, error, gpsEnabled: connected && hasGpsAccess(account, now),
-      refresh, submit,
+      refresh, submit, now,
     }}>{children}</SessionContext.Provider>
   );
 }
@@ -193,22 +194,22 @@ export function AccountForm({ setup = false }: { setup?: boolean }) {
   );
 }
 
-function PasswordSettings({ minLength }: { minLength: number }) {
+export function PasswordSettings({ minLength }: { minLength: number }) {
   const { submit } = useAccount();
   const { t, message } = useLanguage();
-  const dialog = useRef<HTMLDialogElement>(null);
-  const form = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [changed, setChanged] = useState(false);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const fields = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const fields = new FormData(form);
     const currentPassword = fields.get('currentPassword');
     const password = fields.get('password');
     const confirmPassword = fields.get('confirmPassword');
     setError('');
+    setChanged(false);
     if (password !== confirmPassword) {
       setError('The passwords do not match.');
       return;
@@ -216,7 +217,7 @@ function PasswordSettings({ minLength }: { minLength: number }) {
     setBusy(true);
     try {
       await submit({ action: 'change-password', currentPassword, password, confirmPassword });
-      form.current?.reset();
+      form.reset();
       setChanged(true);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Could not change your password.');
@@ -226,36 +227,18 @@ function PasswordSettings({ minLength }: { minLength: number }) {
   }
 
   return (
-    <>
-      <button className="button" type="button" onClick={() => {
-        form.current?.reset();
-        setError('');
-        setChanged(false);
-        dialog.current?.showModal();
-      }}>{t('Change password')}</button>
-      <dialog ref={dialog} className="password-dialog panel" aria-label={t('Change password')}
-        onClose={() => form.current?.reset()}
-        onCancel={(event) => { if (busy) event.preventDefault(); }}>
-        <div className="panel-heading">
-          <h2>{t('Change password')}</h2>
-          <button className="button" type="button" disabled={busy} onClick={() => dialog.current?.close()}>{t('Close')}</button>
-        </div>
-        <div className="password-body">
-          <form className="account-form" ref={form} onSubmit={save} hidden={changed}>
-            <label>{t('Current password')}<input name="currentPassword" type="password" autoComplete="current-password" required maxLength={128} /></label>
-            <label>{t('New password')}<input name="password" type="password" autoComplete="new-password" required minLength={minLength} maxLength={128} /></label>
-            <label>{t('Confirm new password')}<input name="confirmPassword" type="password" autoComplete="new-password" required maxLength={128} /></label>
-            {error && <p className="account-error" role="alert">{message(error)}</p>}
-            <button className="button primary" disabled={busy}>{t(busy ? 'Saving…' : 'Save password')}</button>
-          </form>
-          {changed && <p role="status">{t('Password changed. Your other sessions have been signed out')}</p>}
-        </div>
-      </dialog>
-    </>
+    <form className="account-form" onSubmit={save}>
+      <label>{t('Current password')}<input name="currentPassword" type="password" autoComplete="current-password" required maxLength={128} readOnly={busy} /></label>
+      <label>{t('New password')}<input name="password" type="password" autoComplete="new-password" required minLength={minLength} maxLength={128} readOnly={busy} /></label>
+      <label>{t('Confirm new password')}<input name="confirmPassword" type="password" autoComplete="new-password" required maxLength={128} readOnly={busy} /></label>
+      {error && <p className="account-error" role="alert">{message(error)}</p>}
+      <button className="button primary" disabled={busy}>{t(busy ? 'Saving…' : 'Save password')}</button>
+      {changed && <p className="profile-success" role="status">{t('Password changed. Your other sessions have been signed out')}</p>}
+    </form>
   );
 }
 
-export function AccountMenu({ showAdmin }: { showAdmin: boolean }) {
+export function AccountMenu({ showAdmin, showProfile }: { showAdmin: boolean; showProfile: boolean }) {
   const { account, submit } = useAccount();
   const { t, message } = useLanguage();
   const [busy, setBusy] = useState(false);
@@ -264,7 +247,7 @@ export function AccountMenu({ showAdmin }: { showAdmin: boolean }) {
   return (
     <>
       {showAdmin && account.role === 'admin' && <Link className="button site-section" href="/admin/">{t('Admin')}</Link>}
-      <PasswordSettings minLength={account.role === 'admin' ? 12 : 8} />
+      {showProfile && <Link className="button site-section" href="/profile/">{t('Profile')}</Link>}
       <button className="button" disabled={busy} onClick={async () => {
         setBusy(true);
         setError('');

@@ -13,7 +13,6 @@
 .account-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .account-tabs [aria-pressed="true"] { border-color: #4da598; color: #a4fbec; background: #173632; }
 .account-form { display: grid; gap: 13px; }
-.account-form[hidden] { display: none; }
 .account-form label { display: grid; gap: 6px; color: var(--muted); font-size: .9rem; }
 .account-form input, .admin-search input {
   width: 100%;
@@ -49,9 +48,18 @@
 .language-switch button { min-width: 37px; min-height: 36px; padding: 0 4px; border-radius: 6px; color: var(--muted); font-size: .8rem; font-weight: 750; }
 .language-switch button:hover { color: var(--text); background: #1c3038; }
 .language-switch [aria-pressed="true"] { color: var(--accent); background: #1c3a37; }
-.password-dialog { width: min(430px, calc(100% - 28px)); max-height: calc(100svh - 24px); margin: auto; overflow: auto; color: var(--text); }
-.password-dialog::backdrop { background: #050b10da; }
-.password-body { padding: 19px; }
+.profile-main { max-width: 960px; margin-inline: auto; padding: clamp(20px, 4vw, 38px) 0 24px; }
+.profile-heading { display: grid; gap: 8px; margin-bottom: 18px; }
+.profile-heading p, .profile-plan-details dt { color: var(--muted); font-size: .875rem; }
+.profile-heading strong { margin-inline-start: 6px; color: var(--text); font-family: var(--mono); }
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
+.profile-grid .panel-heading { flex-wrap: wrap; }
+.profile-plan-details, .profile-password-body { padding: 15px 19px; }
+.profile-plan-details > div { display: grid; gap: 3px; padding: 10px 0; }
+.profile-plan-details > div + div { border-top: 1px solid var(--line); }
+.profile-plan-details dd { font-weight: 650; }
+.profile-plan-details time { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.profile-success { color: var(--accent); font-size: .875rem; }
 .gps-locked { border: 1px solid #805848; border-radius: 4px; padding: 2px 5px; color: #ffca9d; font-size: .68rem; }
 .purchase-dialog { width: min(570px, calc(100% - 28px)); max-height: calc(100svh - 24px); margin: auto; overflow: auto; }
 .purchase-dialog::backdrop { background: #050b10da; }
@@ -108,10 +116,11 @@
     padding-block: 12px;
   }
   .site-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .site-nav-admin { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .site-nav-admin, .site-nav-profile { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .site-nav .button { min-height: 44px; height: 100%; padding-inline: 5px; font-size: .78rem; }
 }
 @media (max-width: 700px) {
+  .profile-grid { grid-template-columns: minmax(0, 1fr); }
   .admin-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; padding: 14px; }
   .admin-search label { grid-column: 1 / -1; color: var(--muted); font-size: .875rem; }
   .admin-search input { width: 100%; min-width: 0; }
@@ -145,7 +154,7 @@
 }
 @media (max-width: 360px) {
   .site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .site-nav:not(.site-nav-admin) > .site-section:first-child { grid-column: 1 / -1; }
+  .site-nav:not(.site-nav-admin, .site-nav-profile) > .site-section:first-child { grid-column: 1 / -1; }
   .admin-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .account-card .wordmark { font-size: 22px; }
 }

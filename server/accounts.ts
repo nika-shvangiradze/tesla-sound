@@ -7,7 +7,12 @@ const RATE_WINDOW_MS = 15 * 60 * 1000;
 const DUMMY_PASSWORD = `${'0'.repeat(32)}:${'0'.repeat(64)}`;
 
 type Session = { digest: string; expires: number };
-type Account = AccountView & { passwordHash: string; sessions: Session[]; appliedGrants: string[] };
+type Account = Omit<AccountView, 'planActivatedAt'> & {
+  planActivatedAt?: number | null;
+  passwordHash: string;
+  sessions: Session[];
+  appliedGrants: string[];
+};
 type AccountRecord = Account | { deleted: true };
 type Rate = { until: number; count: number };
 type Stored<T> = { data: T; etag: string };
@@ -49,7 +54,8 @@ async function matchesPassword(password: string, stored: string) {
 }
 
 function summary(account: Account): AccountView {
-  return { phone: account.phone, role: account.role, createdAt: account.createdAt, gpsUntil: account.gpsUntil, plan: account.plan };
+  const { phone, role, createdAt, gpsUntil, plan, planActivatedAt = null } = account;
+  return { phone, role, createdAt, gpsUntil, plan, planActivatedAt };
 }
 
 function reply(data: unknown, status = 200, cookie?: string) {
@@ -170,7 +176,7 @@ export async function handleAccount(req: Request, store: AccountStore, ip: strin
         if (password.length < (isAdmin ? 12 : 8)) throw new ApiError(400, `Use at least ${isAdmin ? 12 : 8} characters for the password.`);
         if (password !== body.confirmPassword) throw new ApiError(400, 'The passwords do not match.');
         account = {
-          phone, role: isAdmin ? 'admin' : 'user', createdAt: now, gpsUntil: null, plan: null,
+          phone, role: isAdmin ? 'admin' : 'user', createdAt: now, gpsUntil: null, plan: null, planActivatedAt: null,
           passwordHash: await createPasswordHash(password), sessions: [session], appliedGrants: [],
         };
         const prior = await store.read<AccountRecord>(key);
@@ -256,10 +262,11 @@ export async function handleAccount(req: Request, store: AccountStore, ip: strin
         if (value.appliedGrants.includes(grantId)) return value;
         return {
           ...value, gpsUntil: addMonths(Math.max(now, value.gpsUntil ?? 0), plan.months), plan: plan.id,
+          planActivatedAt: now,
           appliedGrants: [...value.appliedGrants.slice(-29), grantId],
         };
       }
-      return { ...value, gpsUntil: null, plan: null };
+      return { ...value, gpsUntil: null, plan: null, planActivatedAt: null };
     });
     return reply({ account: activeAccount(updated) ? summary(updated) : null });
   } catch (error) {

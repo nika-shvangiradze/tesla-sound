@@ -54,7 +54,8 @@ test('account and administrator flow covers password changes, GPS access, and de
   const account = (await user.json()).account as AccountView;
   assert.equal(account.phone, phone);
   assert.equal(hasGpsAccess(account), false);
-  assert.deepEqual(Object.keys(account).sort(), ['createdAt', 'gpsUntil', 'phone', 'plan', 'role']);
+  assert.equal(account.planActivatedAt, null);
+  assert.deepEqual(Object.keys(account).sort(), ['createdAt', 'gpsUntil', 'phone', 'plan', 'planActivatedAt', 'role']);
   assert.equal((await issue({ action: 'list' }, userCookie)).status, 403);
   assert.equal((await issue({ action: 'list' }, '', 'https://foreign.example')).status, 403);
   assert.equal((await issue({ action: 'register', phone: localPhone, password, confirmPassword: password })).status, 409);
@@ -67,13 +68,30 @@ test('account and administrator flow covers password changes, GPS access, and de
   const list = await (await issue({ action: 'list', search: '555123456' }, adminCookie)).json();
   assert.deepEqual(list.accounts, [account]);
 
+  const userKey = 'user/' + phone;
+  const stored = await store.read<Record<string, unknown>>(userKey);
+  assert.ok(stored);
+  delete stored.data.planActivatedAt;
+  const legacyExpiry = addMonths(Date.now(), 1);
+  await store.write(userKey, { ...stored.data, plan: 'month', gpsUntil: legacyExpiry }, { onlyIfMatch: stored.etag });
+  const legacy = (await (await issue(undefined, userCookie)).json()).account;
+  assert.equal(legacy.plan, 'month');
+  assert.equal(legacy.planActivatedAt, null);
+  assert.equal(legacy.gpsUntil, legacyExpiry);
+
   const grant = { action: 'grant', phone, plan: 'month', id: 'test-unique-grant-0001' };
   const [first, repeated] = await Promise.all([issue(grant, adminCookie), issue(grant, adminCookie)]);
   const [one, two] = await Promise.all([first.json(), repeated.json()]);
   assert.equal(one.account.gpsUntil, two.account.gpsUntil);
+  assert.equal(one.account.gpsUntil, addMonths(legacyExpiry, 1));
+  assert.ok(one.account.planActivatedAt >= account.createdAt);
+  assert.equal(one.account.planActivatedAt, two.account.planActivatedAt);
   const extended = await (await issue({ ...grant, plan: 'quarter', id: 'test-unique-grant-0002' }, adminCookie)).json();
   assert.equal(extended.account.gpsUntil, addMonths(one.account.gpsUntil, 3));
-  assert.equal(hasGpsAccess((await (await issue(undefined, userCookie)).json()).account), true);
+  assert.equal(extended.account.plan, 'quarter');
+  assert.ok(extended.account.planActivatedAt >= one.account.planActivatedAt);
+  assert.deepEqual((await (await issue(undefined, userCookie)).json()).account, extended.account);
+  assert.equal(hasGpsAccess(extended.account), true);
   assert.equal(hasGpsAccess(extended.account, extended.account.gpsUntil), false);
 
   assert.equal((await issue({ action: 'login', phone: '555 123 456', password })).status, 400);
@@ -88,7 +106,7 @@ test('account and administrator flow covers password changes, GPS access, and de
   assert.equal(changed.status, 200);
   const rotated = sessionFrom(changed);
   assert.notEqual(rotated, userCookie);
-  assert.equal(hasGpsAccess((await changed.json()).account), true);
+  assert.deepEqual((await changed.json()).account, extended.account);
   for (const cookie of [userCookie, sessionFrom(second)]) {
     assert.equal((await (await issue(undefined, cookie)).json()).account, null);
   }
@@ -101,6 +119,8 @@ test('account and administrator flow covers password changes, GPS access, and de
   assert.equal((await issue({ action: 'revoke', phone, createdAt: account.createdAt }, adminCookie)).status, 200);
   const revoked = (await (await issue(undefined, rotated)).json()).account;
   assert.equal(revoked.phone, phone);
+  assert.equal(revoked.planActivatedAt, null);
+  assert.equal(revoked.plan, null);
   assert.equal(hasGpsAccess(revoked), false);
   const deletion = { action: 'delete', phone, createdAt: account.createdAt };
   assert.equal((await issue(deletion, rotated)).status, 403);
